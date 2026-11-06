@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Core-lab Arcade: La Memoria del Árbol</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&family=Outfit:wght@400;600;800&display=swap');
+    
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #0a1118;
+      color: #f8fafc;
+    }
+    
+    h1, h2, h3, .font-heading {
+      font-family: 'Outfit', sans-serif;
+    }
+
+    /* Organic Gradient mesh background */
+    .bg-mesh {
+      background-color: #06110d;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.15) 0px, transparent 40%),
+        radial-gradient(at 100% 0%, rgba(245, 158, 11, 0.12) 0px, transparent 40%),
+        radial-gradient(at 50% 100%, rgba(14, 116, 144, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.1) 0px, transparent 40%);
+    }
+
+    /* Glassmorphic cards */
+    .glass-card {
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Flip card styling */
+    .perspective { perspective: 1000px; }
+    .transform-style-3d { transform-style: preserve-3d; }
+    .backface-hidden { backface-visibility: hidden; }
+    .rotate-y-180 { transform: rotateY(180deg); }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 4px; }
+    
+    /* Timer Pulse */
+    @keyframes pulse-border {
+      0% { border-color: rgba(244, 63, 94, 0.4); }
+      50% { border-color: rgba(244, 63, 94, 1); box-shadow: 0 0 15px rgba(244, 63, 94, 0.5); }
+      100% { border-color: rgba(244, 63, 94, 0.4); }
+    }
+    .timer-urgent { animation: pulse-border 1s infinite; color: #f43f5e; }
+  </style>
+</head>
+<body class="bg-mesh min-h-screen flex flex-col antialiased">
+
+  <!-- HEADER / BRANDING -->
+  <header class="border-b border-emerald-900/50 bg-slate-950/80 backdrop-blur-xl sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+      
+      <div class="flex items-center space-x-3">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-700 flex items-center justify-center text-slate-950 font-extrabold text-2xl shadow-lg shadow-emerald-900/40 transform hover:rotate-12 transition">
+          <i class="fa-solid fa-tree"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-extrabold text-xl text-white tracking-wide">CORE-LAB <span class="text-emerald-400">ARCADE</span></h1>
+            <span class="bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">V4.0</span>
+          </div>
+          <p class="text-xs text-slate-400">Equipo Horizonte | <span class="italic text-emerald-200">"Cada meta empieza con un paso"</span></p>
+        </div>
+      </div>
+
+      <!-- Action: Tree Growth Meter -->
+      <div class="flex items-center gap-4 bg-slate-900/80 border border-slate-700/50 px-5 py-2 rounded-2xl shadow-inner">
+        <div class="text-right">
+          <div class="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Memoria del Árbol</div>
+          <div id="tree-rings-count" class="text-base font-extrabold text-white">0 / 10 Anillos</div>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-900 font-black shadow-lg shadow-emerald-500/20">
+          <i class="fa-solid fa-ring"></i>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- HERO SECTION WITH BOOK METAPHOR -->
+  <section class="max-w-7xl mx-auto px-4 pt-10 pb-6 text-center relative">
+    <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] opacity-5 pointer-events-none"></div>
+    
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold mb-6 uppercase tracking-widest shadow-lg shadow-amber-900/20">
+      <i class="fa-solid fa-book-open"></i> Ecosistema de Innovación Humana
+    </div>
+    
+    <h2 class="text-4xl md:text-6xl font-extrabold text-white max-w-4xl mx-auto leading-tight drop-shadow-lg">
+      Transformando la ética en <br/>
+      <span class="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">Práctica Vivencial</span>
+    </h2>
+    
+    <blockquote class="text-slate-300 italic text-sm md:text-lg max-w-3xl mx-auto mt-6 font-light bg-slate-900/50 p-4 rounded-2xl border border-slate-800">
+      "Un árbol guarda en sus anillos la historia de cada año que ha vivido... Las cosas importantes no se dicen con palabras grandes, sino con detalles pequeños. Nuestra memoria está en lo que hacemos hoy."
+    </blockquote>
+    
+    <!-- Valores del equipo -->
+    <div class="flex flex-wrap justify-center gap-3 mt-6">
+      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-800 px-3 py-1 rounded-full"><i class="fa-solid fa-mountain text-emerald-500"></i> Perseverancia</span>
+      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-800 px-3 py-1 rounded-full"><i class="fa-solid fa-scale-balanced text-emerald-500"></i> Honestidad</span>
+      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-800 px-3 py-1 rounded-full"><i class="fa-solid fa-handshake-angle text-emerald-500"></i> Respeto</span>
+      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-800 px-3 py-1 rounded-full"><i class="fa-solid fa-hammer text-emerald-500"></i> Esfuerzo</span>
+      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-800 px-3 py-1 rounded-full"><i class="fa-solid fa-people-group text-emerald-500"></i> Solidaridad</span>
+    </div>
+  </section>
+
+  <!-- MAIN NAVIGATION TABS -->
+  <div class="max-w-7xl mx-auto px-4 my-8 relative z-10">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-900/90 p-2 rounded-2xl border border-slate-700 shadow-2xl">
+      <button onclick="switchTab('arcade-tronco')" id="tab-tronco" class="tab-btn py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-900/50 border border-emerald-500/50">
+        <i class="fa-solid fa-dharmachakra"></i>
+        <span>1. El Tronco (Dilemas)</span>
+      </button>
+      <button onclick="switchTab('arcade-raices')" id="tab-raices" class="tab-btn py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent">
+        <i class="fa-solid fa-seedling text-amber-500"></i>
+        <span>2. Las Raíces (Estrés)</span>
+      </button>
+      <button onclick="switchTab('arcade-hojas')" id="tab-hojas" class="tab-btn py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent">
+        <i class="fa-solid fa-leaf text-teal-400"></i>
+        <span>3. Las Hojas (Empatía)</span>
+      </button>
+      <button onclick="switchTab('arcade-muro')" id="tab-muro" class="tab-btn py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent">
+        <i class="fa-solid fa-clipboard-list text-emerald-400"></i>
+        <span>4. Bitácora (Muro)</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- INTERACTIVE PLAYGROUND CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 pb-16 flex-grow w-full z-10 relative">
+
+    <!-- TAB 1: RULETA DE DILEMAS ÉTICOS -->
+    <section id="arcade-tronco" class="tab-content space-y-6">
+      <div class="glass-card rounded-[2rem] p-6 md:p-10 border-emerald-500/30 relative overflow-hidden">
+        
+        <!-- Timer Widget -->
+        <div id="timer-widget" class="absolute top-6 right-6 bg-slate-900 border-2 border-slate-700 px-4 py-2 rounded-xl flex items-center gap-3 hidden">
+          <i class="fa-solid fa-stopwatch text-xl text-emerald-400"></i>
+          <div class="text-right">
+            <div class="text-[9px] text-slate-400 uppercase font-bold">Tiempo de Reto</div>
+            <div id="time-display" class="font-mono text-xl font-bold text-white">05:00</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center mt-8 lg:mt-0">
+          
+          <!-- Ruleta Visual -->
+          <div class="lg:col-span-5 flex flex-col items-center justify-center">
+            <div class="relative w-72 h-72 md:w-96 md:h-96 flex items-center justify-center">
+              
+              <!-- Indicator Arrow -->
+              <div class="absolute -top-4 z-20 text-amber-400 text-4xl filter drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
+                <i class="fa-solid fa-caret-down"></i>
+              </div>
+
+              <!-- Canvas Wheel -->
+              <canvas id="wheelCanvas" width="380" height="380" class="w-full h-full rounded-full shadow-[0_0_40px_rgba(16,185,129,0.2)] border-[6px] border-slate-800"></canvas>
+              
+              <!-- Center Button -->
+              <button onclick="spinWheel()" id="spin-btn" class="absolute w-20 h-20 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-300 text-slate-950 font-black text-base uppercase shadow-2xl hover:scale-110 active:scale-95 transition-all flex items-center justify-center border-4 border-slate-900 z-10">
+                GIRAR
+              </button>
+            </div>
+            
+            <p class="text-sm text-slate-400 mt-6 text-center bg-slate-900/50 px-4 py-2 rounded-lg inline-block">
+              Gira para enfrentar un dilema. <strong class="text-amber-400">¡Tienes 5 minutos para debatir!</strong>
+            </p>
+          </div>
+
+          <!-- Dilema Result Area -->
+          <div class="lg:col-span-7 space-y-5">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">
+              <i class="fa-solid fa-ring"></i> El Tronco del Árbol • Construyendo Criterio
+            </div>
+            
+            <h3 id="dilemma-title" class="text-3xl font-extrabold text-white leading-tight">¡Gira la ruleta para comenzar tu reto!</h3>
+            <p id="dilemma-desc" class="text-slate-300 text-base leading-relaxed">
+              El aprendizaje no es teoría abstracta. Al girar, el equipo tendrá <strong>5 minutos</strong> para llegar a un consenso sobre una situación real. Solo así ganarán un anillo para el árbol.
+            </p>
+
+            <!-- Dilema Dynamic Options -->
+            <div id="dilemma-options" class="space-y-3 pt-4 hidden">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- Action button after option selected -->
+            <div id="dilemma-action" class="pt-6 hidden">
+              <button onclick="resolveDilemma()" class="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-extrabold rounded-xl text-base transition-all shadow-[0_10px_20px_-10px_rgba(16,185,129,0.6)] flex items-center justify-center gap-3 transform hover:-translate-y-1">
+                <i class="fa-solid fa-gavel"></i> Sellar Decisión y Ganar Anillo
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: MEDIDOR DE ESTRÉS Y CARTAS DE RESILIENCIA -->
+    <section id="arcade-raices" class="tab-content hidden space-y-6">
+      <div class="glass-card rounded-[2rem] p-6 md:p-10 border-amber-500/30">
+        
+        <div class="max-w-3xl mx-auto text-center space-y-4 mb-10">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-bold border border-amber-500/20">
+            <i class="fa-solid fa-seedling"></i> Las Raíces del Árbol • Autocuidado
+          </div>
+          <h3 class="text-3xl font-extrabold text-white">Diagnóstico de Agotamiento (Burnout)</h3>
+          <p class="text-slate-300 text-base">
+            El 60% de los estudiantes considera que hay desconexión entre la exigencia universitaria y su bienestar. Evalúa la salud de tus raíces en 3 preguntas rápidas para desbloquear tu <strong>Reto de Resiliencia de 5 Minutos</strong>.
+          </p>
+        </div>
+
+        <!-- Quiz Container -->
+        <div id="stress-quiz" class="max-w-2xl mx-auto space-y-6">
+          
+          <div class="bg-slate-900/80 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-4">
+            <label class="text-base font-semibold text-slate-100 block">1. Frente a tu carga de proyectos técnicos (como programación), ¿cómo está tu energía hoy?</label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <button type="button" onclick="setQuizAnswer(0, 1)" class="q-btn q0 py-3 px-4 rounded-xl border border-slate-600 text-sm font-medium text-slate-300 hover:border-emerald-500 hover:bg-slate-800 transition">Equilibrada</button>
+              <button type="button" onclick="setQuizAnswer(0, 2)" class="q-btn q0 py-3 px-4 rounded-xl border border-slate-600 text-sm font-medium text-slate-300 hover:border-amber-500 hover:bg-slate-800 transition">Al límite, pero funcional</button>
+              <button type="button" onclick="setQuizAnswer(0, 3)" class="q-btn q0 py-3 px-4 rounded-xl border border-slate-600 text-sm font-medium text-slate-300 hover:border-rose-500 hover:bg-slate-800 transition">Completamente agotado/a</button>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/80 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-4">
+            <label class="text-base font-semibold text-slate-100 block">2. Cuando tomas clases de "ética" o "humanidades", ¿qué sientes internamente?</label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <button type="button" onclick="setQuizAnswer(1, 1)" class="q-btn q1 py-3 px-4 rounded-xl border border-slate-600 text-sm font-medium text-slate-300 hover:border-emerald-500 hover:bg-slate-800 transition">Conexión con mi vida</button>
+              <button type="button" onclick="setQuizAnswer(1, 2)" class="q-btn q1 py-3 px-4 rounded-xl border border-slate-600 text-sm font-medium text-slate-300 hover:border-amber-500 hover:bg-slate-800 transition">Duda de su utilidad</button>
+              <button type="button" onclick="setQuizAnswer(1, 3)" class="q-btn q1 py-3 px-4 rounded-xl border border-slate-600 text-sm font-medium text-slate-300 hover:border-rose-500 hover:bg-slate-800 transition">Es puro relleno / Quita tiempo</button>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/80 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-4">
+            <label class="text-base font-semibold text-slate-100 block">3. ¿Cuánto tiempo consciente has dedicado a pausar tu mente (sin pantallas) en las últimas 48h?</label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <button type="button" onclick="setQuizAnswer(2, 1)" class="q-btn q2 py-3 px-4 rounded-xl border border-slate-600 text-sm font-medium text-slate-300 hover:border-emerald-500 hover:bg-slate-800 transition">Más de 1 hora</button>
+              <button type="button" onclick="setQuizAnswer(2, 2)" class="q-btn q2 py-3 px-4 rounded-xl border border-slate-600 text-sm font-medium text-slate-300 hover:border-amber-500 hover:bg-slate-800 transition">Unos minutos apenas</button>
+              <button type="button" onclick="setQuizAnswer(2, 3)" class="q-btn q2 py-3 px-4 rounded-xl border border-slate-600 text-sm font-medium text-slate-300 hover:border-rose-500 hover:bg-slate-800 transition">Absolutamente nada</button>
+            </div>
+          </div>
+
+          <button onclick="calculateResilienceCard()" class="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold rounded-xl text-base transition-all shadow-[0_10px_20px_-10px_rgba(245,158,11,0.6)] transform hover:-translate-y-1">
+            <i class="fa-solid fa-stethoscope"></i> Obtener mi Carta de Resiliencia Personalizada
+          </button>
+
+        </div>
+
+        <!-- Result Card Area -->
+        <div id="resilience-result" class="max-w-md mx-auto space-y-6 hidden">
+          <div class="p-8 rounded-[2rem] bg-slate-900 border-2 border-amber-500/40 text-center space-y-5 shadow-2xl relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-b from-amber-500/10 to-transparent pointer-events-none"></div>
+            
+            <div class="w-20 h-20 bg-amber-500/20 text-amber-400 rounded-3xl flex items-center justify-center text-4xl mx-auto shadow-inner border border-amber-500/20">
+              <i id="resilience-icon" class="fa-solid fa-battery-quarter"></i>
+            </div>
+            
+            <div>
+              <span id="resilience-badge" class="text-[10px] font-black uppercase tracking-widest text-amber-400 bg-amber-500/10 px-4 py-1.5 rounded-full border border-amber-500/30">Alerta de Raíces Secas</span>
+              <h4 id="resilience-title" class="text-2xl font-extrabold text-white mt-3">Sobrecarga Técnica Detectada</h4>
+            </div>
+
+            <p id="resilience-text" class="text-sm text-slate-300 leading-relaxed italic bg-slate-950/50 p-4 rounded-xl border border-slate-800">
+              "Si las raíces se secan por enfocarse solo en crecer hacia arriba, el árbol entero cae ante el primer viento fuerte."
+            </p>
+
+            <div class="p-5 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl text-left border border-amber-500/50 shadow-lg relative">
+              <div class="absolute -top-3 -right-3 w-8 h-8 bg-rose-500 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-lg animate-bounce">5m</div>
+              <span class="text-xs font-black text-amber-400 uppercase tracking-wider block mb-2"><i class="fa-solid fa-fire"></i> Reto Inmediato (5 Minutos):</span>
+              <p id="resilience-challenge" class="text-sm text-slate-100 font-medium">Cierra todas las pestañas de código. Durante 5 minutos exactos, habla con la persona a tu lado exclusivamente sobre algo que te apasionaba cuando tenías 10 años.</p>
+            </div>
+
+            <div class="flex gap-3 pt-4">
+              <button onclick="resetQuiz()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition">
+                <i class="fa-solid fa-rotate-left"></i> Repetir
+              </button>
+              <button onclick="completeRootsRing()" class="flex-[2] py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-extrabold rounded-xl text-sm transition shadow-lg">
+                ¡Reto Cumplido! (+1 Anillo)
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 3: EMPATÍA FLASH (FLASHCARDS DE RELACIONES) -->
+    <section id="arcade-hojas" class="tab-content hidden space-y-6">
+      <div class="glass-card rounded-[2rem] p-6 md:p-10 border-teal-500/30">
+        
+        <div class="max-w-3xl mx-auto text-center space-y-4 mb-10">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 text-teal-400 text-xs font-bold border border-teal-500/20">
+            <i class="fa-solid fa-leaf"></i> Las Hojas del Árbol • Empatía Viva
+          </div>
+          <h3 class="text-3xl font-extrabold text-white">Decodificador de Relaciones</h3>
+          <p class="text-slate-300 text-base">
+            No somos máquinas procesando datos. Toca las tarjetas para enfrentar micro-casos donde aplicar los valores del Equipo Horizonte: <strong>Solidaridad, Honestidad y Respeto</strong>.
+          </p>
+        </div>
+
+        <!-- Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          
+          <!-- Flashcard 1 -->
+          <div class="perspective h-80 cursor-pointer group" onclick="flipCard(this)">
+            <div class="card-inner relative w-full h-full transform-style-3d transition-transform duration-700">
+              <!-- Front -->
+              <div class="absolute inset-0 bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 flex flex-col justify-between backface-hidden shadow-xl group-hover:border-teal-500/50 transition-colors">
+                <div>
+                  <div class="flex justify-between items-start">
+                    <span class="text-[10px] font-black uppercase tracking-wider text-teal-400 bg-teal-500/10 px-3 py-1.5 rounded-full border border-teal-500/20">Solidaridad</span>
+                    <i class="fa-solid fa-people-group text-slate-600 text-xl"></i>
+                  </div>
+                  <h4 class="text-xl font-bold text-white mt-5">El compañero fantasma</h4>
+                  <p class="text-sm text-slate-400 mt-3 leading-relaxed">Un integrante de tu grupo de ingeniería no responde los mensajes del proyecto final a 2 días de la entrega crucial.</p>
+                </div>
+                <div class="text-center text-xs font-black uppercase tracking-widest text-teal-500 flex items-center justify-center gap-2 bg-slate-800/50 py-3 rounded-xl">
+                  Revelar Acción <i class="fa-solid fa-arrow-rotate-right"></i>
+                </div>
+              </div>
+              <!-- Back -->
+              <div class="absolute inset-0 bg-gradient-to-br from-teal-900 to-slate-900 border-2 border-teal-400 rounded-3xl p-6 flex flex-col justify-between rotate-y-180 backface-hidden shadow-[0_0_30px_rgba(20,184,166,0.3)]">
+                <div>
+                  <span class="text-[10px] font-black uppercase tracking-wider text-teal-300">Práctica Vivencial</span>
+                  <p class="text-sm text-slate-200 mt-4 leading-relaxed font-medium">
+                    En lugar de sacarlo del grupo por "irresponsable", le escribes por privado: <em>"¿Todo está bien en casa? Notamos que no estás conectado"</em>. Descubres que está atravesando un duelo familiar severo.
+                  </p>
+                </div>
+                <button onclick="event.stopPropagation(); completeLeafCard(1);" class="w-full py-3 bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold text-sm rounded-xl transition shadow-lg transform hover:-translate-y-1">
+                  Integrar Aprendizaje
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Flashcard 2 -->
+          <div class="perspective h-80 cursor-pointer group" onclick="flipCard(this)">
+            <div class="card-inner relative w-full h-full transform-style-3d transition-transform duration-700">
+              <!-- Front -->
+              <div class="absolute inset-0 bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 flex flex-col justify-between backface-hidden shadow-xl group-hover:border-teal-500/50 transition-colors">
+                <div>
+                  <div class="flex justify-between items-start">
+                    <span class="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 px-3 py-1.5 rounded-full border border-amber-500/20">Honestidad</span>
+                    <i class="fa-solid fa-scale-balanced text-slate-600 text-xl"></i>
+                  </div>
+                  <h4 class="text-xl font-bold text-white mt-5">El atajo tecnológico</h4>
+                  <p class="text-sm text-slate-400 mt-3 leading-relaxed">Te das cuenta de que la IA generó un código que funciona perfecto, pero tú no entiendes cómo, y el profesor va a evaluarlo oralmente.</p>
+                </div>
+                <div class="text-center text-xs font-black uppercase tracking-widest text-teal-500 flex items-center justify-center gap-2 bg-slate-800/50 py-3 rounded-xl">
+                  Revelar Acción <i class="fa-solid fa-arrow-rotate-right"></i>
+                </div>
+              </div>
+              <!-- Back -->
+              <div class="absolute inset-0 bg-gradient-to-br from-amber-900 to-slate-900 border-2 border-amber-400 rounded-3xl p-6 flex flex-col justify-between rotate-y-180 backface-hidden shadow-[0_0_30px_rgba(245,158,11,0.3)]">
+                <div>
+                  <span class="text-[10px] font-black uppercase tracking-wider text-amber-300">Práctica Vivencial</span>
+                  <p class="text-sm text-slate-200 mt-4 leading-relaxed font-medium">
+                    Decides invertir 2 horas extra estudiando línea por línea el algoritmo generado hasta comprenderlo, negándote a presentar algo que no forma parte de tu propio conocimiento.
+                  </p>
+                </div>
+                <button onclick="event.stopPropagation(); completeLeafCard(2);" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-sm rounded-xl transition shadow-lg transform hover:-translate-y-1">
+                  Integrar Aprendizaje
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Flashcard 3 -->
+          <div class="perspective h-80 cursor-pointer group" onclick="flipCard(this)">
+            <div class="card-inner relative w-full h-full transform-style-3d transition-transform duration-700">
+              <!-- Front -->
+              <div class="absolute inset-0 bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 flex flex-col justify-between backface-hidden shadow-xl group-hover:border-teal-500/50 transition-colors">
+                <div>
+                  <div class="flex justify-between items-start">
+                    <span class="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20">Respeto</span>
+                    <i class="fa-solid fa-handshake-angle text-slate-600 text-xl"></i>
+                  </div>
+                  <h4 class="text-xl font-bold text-white mt-5">La teoría vs. La nota</h4>
+                  <p class="text-sm text-slate-400 mt-3 leading-relaxed">Sientes que la clase de humanidades te quita tiempo valioso y le respondes mal al docente en público.</p>
+                </div>
+                <div class="text-center text-xs font-black uppercase tracking-widest text-teal-500 flex items-center justify-center gap-2 bg-slate-800/50 py-3 rounded-xl">
+                  Revelar Acción <i class="fa-solid fa-arrow-rotate-right"></i>
+                </div>
+              </div>
+              <!-- Back -->
+              <div class="absolute inset-0 bg-gradient-to-br from-emerald-900 to-slate-900 border-2 border-emerald-400 rounded-3xl p-6 flex flex-col justify-between rotate-y-180 backface-hidden shadow-[0_0_30px_rgba(16,185,129,0.3)]">
+                <div>
+                  <span class="text-[10px] font-black uppercase tracking-wider text-emerald-300">Práctica Vivencial</span>
+                  <p class="text-sm text-slate-200 mt-4 leading-relaxed font-medium">
+                    Te detienes, reconoces que tu estrés técnico nubló tu juicio, y pides disculpas frente a la clase. Comprendes que el respeto humano está por encima del estrés académico.
+                  </p>
+                </div>
+                <button onclick="event.stopPropagation(); completeLeafCard(3);" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm rounded-xl transition shadow-lg transform hover:-translate-y-1">
+                  Integrar Aprendizaje
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: MURO DE RECUERDOS (BITÁCORA) -->
+    <section id="arcade-muro" class="tab-content hidden space-y-6">
+      <div class="glass-card rounded-[2rem] p-6 md:p-10 border-emerald-500/30">
+        
+        <div class="max-w-3xl mx-auto text-center space-y-4 mb-10">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">
+            <i class="fa-solid fa-tree"></i> Bitácora del Core-lab
+          </div>
+          <h3 class="text-3xl font-extrabold text-white">El Muro de los Anillos</h3>
+          <p class="text-slate-300 text-base">
+            Las reflexiones compartidas construyen el tronco de nuestro ecosistema. Escribe tu aprendizaje vivencial y plántalo en la memoria colectiva del equipo.
+          </p>
+        </div>
+
+        <!-- Form for new memory -->
+        <div class="max-w-2xl mx-auto bg-slate-900 p-6 rounded-3xl border border-slate-700 shadow-xl space-y-4 mb-12 relative overflow-hidden">
+          <div class="absolute -left-6 top-6 text-6xl text-slate-800 opacity-50 font-serif">"</div>
+          <textarea id="memory-input" rows="3" class="w-full bg-slate-950/50 border-2 border-slate-800 rounded-2xl p-4 text-base text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition-colors relative z-10" placeholder="Ej: Hoy entendí que ser un gran ingeniero mecánico no sirve si ignoro el impacto ético de mi trabajo..."></textarea>
+          
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
+            <input type="text" id="memory-author" class="w-full sm:w-auto flex-grow bg-slate-950/50 border-2 border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition-colors" placeholder="Firma (Tu nombre o Equipo)">
+            
+            <button onclick="addMemoryNote()" class="w-full sm:w-auto py-3 px-8 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-sm rounded-xl transition shadow-[0_5px_15px_rgba(16,185,129,0.4)] flex items-center justify-center gap-2">
+              <i class="fa-solid fa-pen-nib"></i> Grabar Anillo
+            </button>
+          </div>
+        </div>
+
+        <!-- Memories Grid Container -->
+        <div id="memories-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          <!-- Initial mock notes -->
+          <div class="p-6 rounded-3xl bg-slate-900 border border-emerald-500/30 space-y-3 relative group hover:border-emerald-500 transition-colors">
+            <div class="absolute inset-0 bg-gradient-to-br from-emerald-900/20 to-transparent pointer-events-none rounded-3xl"></div>
+            <div class="flex items-center justify-between text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
+              <span><i class="fa-solid fa-ring"></i> Anillo #01</span>
+              <span class="text-slate-500">Sesión 1</span>
+            </div>
+            <p class="text-sm text-slate-300 font-medium leading-relaxed italic">"Entendí que la ética no es memorizar leyes abstractas, sino decidir bien con mi equipo en el trabajo bajo presión."</p>
+            <div class="text-xs text-emerald-500 font-bold text-right pt-2">— Equipo Horizonte</div>
+          </div>
+
+          <div class="p-6 rounded-3xl bg-slate-900 border border-amber-500/30 space-y-3 relative group hover:border-amber-500 transition-colors">
+            <div class="absolute inset-0 bg-gradient-to-br from-amber-900/20 to-transparent pointer-events-none rounded-3xl"></div>
+            <div class="flex items-center justify-between text-[10px] text-amber-400 font-bold uppercase tracking-wider">
+              <span><i class="fa-solid fa-ring"></i> Anillo #02</span>
+              <span class="text-slate-500">Sesión 1</span>
+            </div>
+            <p class="text-sm text-slate-300 font-medium leading-relaxed italic">"El reto de 5 minutos me demostró que vivía desconectado por andar corriendo. Escuchar al otro cambia todo."</p>
+            <div class="text-xs text-amber-500 font-bold text-right pt-2">— Alejo G.</div>
+          </div>
+
+          <div class="p-6 rounded-3xl bg-slate-900 border border-teal-500/30 space-y-3 relative group hover:border-teal-500 transition-colors">
+            <div class="absolute inset-0 bg-gradient-to-br from-teal-900/20 to-transparent pointer-events-none rounded-3xl"></div>
+            <div class="flex items-center justify-between text-[10px] text-teal-400 font-bold uppercase tracking-wider">
+              <span><i class="fa-solid fa-ring"></i> Anillo #03</span>
+              <span class="text-slate-500">Sesión 1</span>
+            </div>
+            <p class="text-sm text-slate-300 font-medium leading-relaxed italic">"A veces juzgamos a los que no trabajan en grupo, pero ignoramos los dolores humanos que cargan. Más empatía."</p>
+            <div class="text-xs text-teal-500 font-bold text-right pt-2">— Maria V.</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-800 bg-slate-950 py-8 text-center relative z-10">
+    <div class="max-w-7xl mx-auto px-4 space-y-3">
+      <div class="w-10 h-10 mx-auto bg-slate-900 rounded-full flex items-center justify-center border border-slate-800 text-emerald-500 mb-4">
+        <i class="fa-solid fa-tree"></i>
+      </div>
+      <p class="font-bold text-slate-300 text-sm tracking-wide">Proyecto Core • Ecosistema de Innovación Humana</p>
+      <p class="text-xs text-slate-500 max-w-2xl mx-auto leading-relaxed">
+        Desarrollado por <strong>Equipo Horizonte</strong>: Maria Victoria Perez, Alejandro Guerrero, Laura Carreño, Sofia Quecan, Sofia Tenjo. <br/>
+        Basado en los lineamientos del Laboratorio Core 5 y la obra <em>La memoria del árbol</em>.
+      </p>
+    </div>
+  </footer>
+
+  <!-- SCRIPT & INTERACTIVE LOGIC -->
+  <script>
+    // Global State
+    let completedRings = 3; // Empezamos con 3 de mock
+    const totalRingsRequired = 10;
+    let timerInterval;
+
+    // Dilemas Data (Expanded for Core-Lab)
+    const dilemmas = [
+      {
+        title: "La Ética vs. El Cliente Urgente",
+        desc: "Tu cliente exige entregar el software hoy. Sabes que falta un módulo de seguridad crítico que podría fallar en unos meses y comprometer datos.",
+        options: [
+          "Entregar a tiempo, cobrar y callar el fallo técnico.",
+          "Explicar con total honestidad el riesgo y asumir la posible multa por retraso.",
+          "Entregar y responsabilizar a un subalterno si falla después."
+        ]
+      },
+      {
+        title: "El Compañero en Crisis",
+        desc: "Un compañero no aportó nada a la entrega final porque confesó estar en una crisis depresiva profunda severa.",
+        options: [
+          "Eliminar su nombre del trabajo, 'el que no trabaja no gana'.",
+          "Incluirlo, pero acercarse a hablar y guiarlo a apoyo universitario.",
+          "Hacer su parte quejándose a sus espaldas con el resto del salón."
+        ]
+      },
+      {
+        title: "El Atajo de la IA",
+        desc: "Generaste todo tu informe final con IA sin leerlo. Tiene una narrativa perfecta, pero no entiendes el concepto humanista de fondo.",
+        options: [
+          "Entregarlo y esperar sacar un 5.0 rápido.",
+          "Usarlo solo como esquema y reescribir con tu propia reflexión humana.",
+          "Dejar que la IA hasta te haga el guion de presentación."
+        ]
+      },
+      {
+        title: "El Plagio de Innovación",
+        desc: "Ves una idea genial de diseño mecánico en un foro antiguo y tienes la oportunidad de presentarla como 100% tuya ante el jurado.",
+        options: [
+          "Apropiarse del diseño; total, el foro es anónimo.",
+          "Inspirarse profundamente pero citar la fuente original con transparencia.",
+          "Cambiarle el color al diseño y decir que es tuyo."
+        ]
+      },
+      {
+        title: "La Materia de 'Relleno'",
+        desc: "Estás estresado por un proyecto técnico. En la clase de humanidades te piden debatir sobre dignidad humana, sientes que pierdes el tiempo.",
+        options: [
+          "Ignorar al profesor y codificar debajo del pupitre.",
+          "Participar e intentar conectar la 'dignidad' con los usuarios de tu proyecto técnico.",
+          "Quejarte en voz alta diciendo que eso no sirve para la carrera."
+        ]
+      },
+      {
+        title: "El Líder Agotado",
+        desc: "Eres el líder del equipo. Llevan 3 días durmiendo 2 horas. Un miembro comete un error grave por cansancio.",
+        options: [
+          "Gritarle frente a todos por arruinar el progreso.",
+          "Frenar el trabajo 1 hora, priorizar el estado mental del equipo y luego arreglar el fallo.",
+          "Sacarlo del equipo y hacerlo tú mismo sin dormir."
+        ]
+      }
+    ];
+
+    let currentDilemma = null;
+
+    // Wheel Canvas Drawing
+    const canvas = document.getElementById('wheelCanvas');
+    const ctx = canvas.getContext('2d');
+    const colors = ['#0f766e', '#b45309', '#0369a1', '#6d28d9', '#1d4ed8', '#b91c1c'];
+    let startAngle = 0;
+    const arc = Math.PI / (dilemmas.length / 2);
+
+    function drawWheel() {
+      for (let i = 0; i < dilemmas.length; i++) {
+        const angle = startAngle + i * arc;
+        
+        // Draw slice
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.beginPath();
+        ctx.moveTo(190, 190);
+        ctx.arc(190, 190, 180, angle, angle + arc, false);
+        ctx.lineTo(190, 190);
+        ctx.fill();
+        
+        // Border
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#0f172a';
+        ctx.stroke();
+
+        // Text
+        ctx.save();
+        ctx.fillStyle = '#f8fafc';
+        ctx.translate(190 + Math.cos(angle + arc / 2) * 110, 190 + Math.sin(angle + arc / 2) * 110);
+        ctx.rotate(angle + arc / 2 + Math.PI / 2);
+        ctx.font = 'bold 15px Plus Jakarta Sans';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Caso 0${i + 1}`, 0, 0);
+        ctx.restore();
+      }
+    }
+
+    drawWheel();
+
+    // 5 Minute Timer Logic
+    function startTimer() {
+      clearInterval(timerInterval);
+      const timerWidget = document.getElementById('timer-widget');
+      const timeDisplay = document.getElementById('time-display');
+      timerWidget.classList.remove('hidden');
+      timerWidget.classList.remove('timer-urgent');
+      
+      let timeLeft = 300; // 5 minutes in seconds
+
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timeDisplay.innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        if(timeLeft <= 60) {
+          timerWidget.classList.add('timer-urgent');
+        }
+
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          timeDisplay.innerText = "00:00";
+          alert("¡Se acabó el tiempo del Reto! Deben tomar una decisión ahora mismo.");
+        }
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+      document.getElementById('timer-widget').classList.add('hidden');
+    }
+
+    // Spin Wheel Logic
+    function spinWheel() {
+      const btn = document.getElementById('spin-btn');
+      btn.disabled = true;
+      stopTimer();
+      
+      const degrees = Math.floor(3000 + Math.random() * 3000);
+      let currentRotation = 0;
+      
+      const spinInterval = setInterval(() => {
+        currentRotation += 20; // velocidad de giro
+        startAngle = (currentRotation * Math.PI) / 180;
+        drawWheel();
+
+        if (currentRotation >= degrees) {
+          clearInterval(spinInterval);
+          btn.disabled = false;
+          
+          // Calculate Selected Index mathematically
+          const normalizedRotation = currentRotation % 360;
+          // Canvas rotation puts 0 degrees at 3 o'clock. Arrow is at 12 o'clock (270 degrees).
+          let hitAngle = (270 - normalizedRotation + 360) % 360;
+          const sliceAngle = 360 / dilemmas.length;
+          let selectedIndex = Math.floor(hitAngle / sliceAngle);
+          
+          showDilemma(dilemmas[selectedIndex]);
+          startTimer(); // Inicia el reto de 5 min
+        }
+      }, 15);
+    }
+
+    function showDilemma(dilemma) {
+      currentDilemma = dilemma;
+      document.getElementById('dilemma-title').innerText = dilemma.title;
+      document.getElementById('dilemma-desc').innerHTML = `El equipo tiene <strong>5 minutos</strong> en el reloj para debatir esta situación:<br/><br/><span class="italic text-amber-200">"${dilemma.desc}"</span>`;
+
+      const optsContainer = document.getElementById('dilemma-options');
+      optsContainer.innerHTML = dilemma.options.map((opt, i) => `
+        <label class="flex items-start gap-4 p-4 rounded-xl border border-slate-700 bg-slate-900/80 cursor-pointer hover:border-emerald-500 hover:bg-slate-800 transition-all group shadow-sm">
+          <div class="pt-1">
+            <input type="radio" name="d-option" value="${i}" class="w-4 h-4 text-emerald-500 bg-slate-900 border-slate-600 focus:ring-emerald-500 focus:ring-2">
+          </div>
+          <span class="text-sm text-slate-200 font-medium group-hover:text-white">${opt}</span>
+        </label>
+      `).join('');
+
+      optsContainer.classList.remove('hidden');
+      document.getElementById('dilemma-action').classList.remove('hidden');
+    }
+
+    function resolveDilemma() {
+      const selected = document.querySelector('input[name="d-option"]:checked');
+      if (!selected) {
+        alert('Por favor, como equipo seleccionen una postura ética definitiva antes de continuar.');
+        return;
+      }
+      stopTimer();
+      incrementRings();
+      confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ['#10b981', '#f59e0b', '#06b6d4'] });
+      
+      // Esconder opciones
+      document.getElementById('dilemma-options').classList.add('hidden');
+      document.getElementById('dilemma-action').classList.add('hidden');
+      document.getElementById('dilemma-title').innerText = "¡Reto Ético Superado!";
+      document.getElementById('dilemma-desc').innerText = "Han tomado una decisión. Su debate añade un nuevo anillo de sabiduría al árbol de la clase. Giren de nuevo o avancen a la siguiente sección.";
+    }
+
+    // TAB SWITCHING LOGIC
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(tabId).classList.remove('hidden');
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-gradient-to-r', 'from-emerald-600', 'to-teal-600', 'text-white', 'shadow-lg', 'border-emerald-500/50');
+        btn.classList.add('text-slate-400', 'border-transparent');
+      });
+
+      const activeBtnMap = {
+        'arcade-tronco': 'tab-tronco',
+        'arcade-raices': 'tab-raices',
+        'arcade-hojas': 'tab-hojas',
+        'arcade-muro': 'tab-muro'
+      };
+
+      const activeBtn = document.getElementById(activeBtnMap[tabId]);
+      activeBtn.classList.add('bg-gradient-to-r', 'from-emerald-600', 'to-teal-600', 'text-white', 'shadow-lg', 'border-emerald-500/50');
+      activeBtn.classList.remove('text-slate-400', 'border-transparent');
+    }
+
+    // QUIZ LOGIC (TAB 2)
+    const quizAnswers = [null, null, null];
+
+    function setQuizAnswer(qIdx, val) {
+      quizAnswers[qIdx] = val;
+      const btns = document.querySelectorAll(`.q${qIdx}`);
+      btns.forEach(b => b.classList.remove('bg-amber-600', 'border-amber-500', 'text-white'));
+      event.target.classList.add('bg-amber-600', 'border-amber-500', 'text-white');
+    }
+
+    function calculateResilienceCard() {
+      if (quizAnswers.includes(null)) {
+        alert('Responde las 3 preguntas con honestidad para evaluar tus raíces.');
+        return;
+      }
+      
+      const score = quizAnswers.reduce((a, b) => a + b, 0);
+      const icon = document.getElementById('resilience-icon');
+      const title = document.getElementById('resilience-title');
+      const desc = document.getElementById('resilience-text');
+      const challenge = document.getElementById('resilience-challenge');
+      const badge = document.getElementById('resilience-badge');
+
+      if(score <= 4) {
+        icon.className = "fa-solid fa-tree text-emerald-400";
+        badge.innerText = "Raíces Fuertes";
+        title.innerText = "Equilibrio Sostenido";
+        desc.innerText = "Tus raíces están absorbiendo bien los nutrientes. Manejas el estrés adecuadamente.";
+        challenge.innerText = "Durante 5 minutos, busca a un compañero que veas estresado y simplemente escúchalo sin intentar 'arreglar' su problema.";
+      } else if (score <= 7) {
+        icon.className = "fa-solid fa-wind text-amber-400";
+        badge.innerText = "Raíces en Tensión";
+        title.innerText = "Alerta de Viento Fuerte";
+        desc.innerText = "Estás sacrificando tiempo humano por rendimiento técnico. El árbol empieza a tambalearse.";
+        challenge.innerText = "Cierra la laptop 5 minutos. Haz 10 respiraciones profundas y anota 3 cosas que agradeces fuera de la universidad.";
+      } else {
+        icon.className = "fa-solid fa-fire text-rose-500";
+        badge.innerText = "Raíces Secas";
+        badge.classList.replace('text-amber-400', 'text-rose-400');
+        title.innerText = "Riesgo de Burnout Inminente";
+        desc.innerText = "Peligro: Has desconectado tu parte humana para rendir como máquina. Necesitas agua urgente.";
+        challenge.innerText = "Obligatorio: Deja todo por 5 minutos exactos. Sal del salón, mira el cielo o un árbol real, y no pienses absolutamente en nada académico.";
+      }
+
+      document.getElementById('stress-quiz').classList.add('hidden');
+      document.getElementById('resilience-result').classList.remove('hidden');
+    }
+
+    function resetQuiz() {
+      document.getElementById('stress-quiz').classList.remove('hidden');
+      document.getElementById('resilience-result').classList.add('hidden');
+      quizAnswers.fill(null);
+      document.querySelectorAll('.q-btn').forEach(b => b.classList.remove('bg-amber-600', 'border-amber-500', 'text-white'));
+    }
+
+    function completeRootsRing() {
+      incrementRings();
+      confetti({ particleCount: 80, spread: 60, colors: ['#f59e0b', '#fbbf24'] });
+      resetQuiz();
+      alert('¡Excelente! Cuidar de ti mismo es el primer acto ético. Sumaste un anillo.');
+    }
+
+    // FLASHCARD FLIP (TAB 3)
+    function flipCard(cardEl) {
+      const inner = cardEl.querySelector('.card-inner');
+      inner.classList.toggle('rotate-y-180');
+    }
+
+    function completeLeafCard(num) {
+      incrementRings();
+      confetti({ particleCount: 60, spread: 50, colors: ['#14b8a6', '#0ea5e9'] });
+      alert(`¡Valor de Empatía asimilado! Las hojas de nuestro árbol se fortalecen.`);
+    }
+
+    // MEMORY WALL LOGIC (TAB 4)
+    function addMemoryNote() {
+      const text = document.getElementById('memory-input').value.trim();
+      const author = document.getElementById('memory-author').value.trim() || 'Ingeniero(a) Core';
+
+      if (!text) {
+        alert('Por favor escribe tu reflexión para que quede grabada en la memoria.');
+        return;
+      }
+
+      const grid = document.getElementById('memories-grid');
+      const noteHtml = `
+        <div class="p-6 rounded-3xl bg-slate-900 border border-emerald-400/50 space-y-3 relative shadow-[0_0_15px_rgba(16,185,129,0.2)] animate-pulse-once">
+          <div class="absolute inset-0 bg-gradient-to-br from-emerald-900/30 to-transparent pointer-events-none rounded-3xl"></div>
+          <div class="flex items-center justify-between text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
+            <span><i class="fa-solid fa-ring"></i> Anillo Nuevo</span>
+            <span class="text-white bg-emerald-500/20 px-2 py-1 rounded">Hoy</span>
+          </div>
+          <p class="text-sm text-slate-100 font-medium leading-relaxed italic">"${text}"</p>
+          <div class="text-xs text-emerald-400 font-black text-right pt-2">— ${author}</div>
+        </div>
+      `;
+
+      grid.insertAdjacentHTML('afterbegin', noteHtml);
+      document.getElementById('memory-input').value = '';
+      document.getElementById('memory-author').value = '';
+
+      incrementRings();
+      confetti({ particleCount: 150, spread: 100, origin: { y: 0.8 } });
+    }
+
+    // RINGS METER INCREMENT
+    function incrementRings() {
+      if (completedRings < totalRingsRequired) {
+        completedRings++;
+        document.getElementById('tree-rings-count').innerText = `${completedRings} / ${totalRingsRequired} Anillos`;
+        
+        // Efecto visual en el contador
+        const counter = document.getElementById('tree-rings-count').parentElement.parentElement;
+        counter.classList.add('bg-emerald-800/80');
+        setTimeout(() => counter.classList.remove('bg-emerald-800/80'), 500);
+      }
+    }
+  </script>
+</body>
+</html>
