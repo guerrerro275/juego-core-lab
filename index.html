@@ -1,844 +1,1490 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Core-lab Arcade: La Memoria del Árbol</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&family=Outfit:wght@400;600;800&display=swap');
-    
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      background: #0a1118;
-      color: #f8fafc;
-    }
-    
-    h1, h2, h3, .font-heading {
-      font-family: 'Outfit', sans-serif;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Core-lab · La memoria del árbol | Equipo Horizonte</title>
+<meta name="description" content="Core-lab: un juego de 15 minutos para que los estudiantes de Core 5 revivan Core 1 (Persona y Autoconocimiento) de la mano de Jan y su abuelo Joan, personajes de La memoria del árbol.">
+<meta property="og:title" content="Core-lab · La memoria del árbol">
+<meta property="og:description" content="Recorre tu Árbol de la Vida en 15 minutos y recupera lo que viviste en Core 1. Equipo Horizonte.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌳</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Outfit:wght@400;600;700;800&family=Pinyon+Script&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root{
+  --bg:#06110d; --panel:rgba(12,24,20,.76);
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.16);
+  --text:#eef5f1; --muted:#a8bcb3; --dim:#728980;
+  --em:#34d399; --teal:#2dd4bf; --amber:#fbbf24; --orange:#fb923c;
+  --rose:#fb7185; --sky:#7dd3fc; --violet:#c4b5fd; --lime:#a3e635;
+  --ink:#3a2e22;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+h1,h2,h3,h4{font-family:'Outfit',sans-serif;line-height:1.15}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea{font:inherit;color:inherit}
+.script{font-family:'Pinyon Script',cursive;font-weight:400}
+.serif{font-family:'Cormorant Garamond',serif}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:#0b1714}
+::-webkit-scrollbar-thumb{background:#1f6b52;border-radius:6px}
 
-    /* Organic Gradient mesh background */
-    .bg-mesh {
-      background-color: #06110d;
-      background-image: 
-        radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.15) 0px, transparent 40%),
-        radial-gradient(at 100% 0%, rgba(245, 158, 11, 0.12) 0px, transparent 40%),
-        radial-gradient(at 50% 100%, rgba(14, 116, 144, 0.15) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.1) 0px, transparent 40%);
-    }
+.bg-layer{position:fixed;inset:0;z-index:-2;background-color:#06110d;
+  background-image:radial-gradient(at 0% 0%,rgba(16,185,129,.17) 0,transparent 42%),
+  radial-gradient(at 100% 0%,rgba(245,158,11,.13) 0,transparent 40%),
+  radial-gradient(at 50% 100%,rgba(14,116,144,.17) 0,transparent 50%),
+  radial-gradient(at 100% 100%,rgba(139,92,246,.10) 0,transparent 40%)}
+.leaves{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.leaves i{position:absolute;top:-40px;color:rgba(52,211,153,.12);animation:fall linear infinite}
+@keyframes fall{0%{transform:translateY(-40px) rotate(0)}100%{transform:translateY(110vh) rotate(540deg)}}
 
-    /* Glassmorphic cards */
-    .glass-card {
-      background: rgba(15, 23, 42, 0.65);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    }
+.wrap{max-width:1180px;margin:0 auto;padding:0 18px;width:100%}
+main{flex:1;padding-bottom:60px}
+.card{background:var(--panel);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:28px;box-shadow:0 25px 50px -12px rgba(0,0,0,.5)}
+.pad{padding:clamp(18px,4vw,40px)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.between{justify-content:space-between}
+.center{text-align:center}
+.mt1{margin-top:8px}.mt2{margin-top:16px}.mt3{margin-top:24px}.mt4{margin-top:34px}
+.muted{color:var(--muted)}.dim{color:var(--dim)}
+.small{font-size:.86rem}.xs{font-size:.75rem}
 
-    /* Flip card styling */
-    .perspective { perspective: 1000px; }
-    .transform-style-3d { transform-style: preserve-3d; }
-    .backface-hidden { backface-visibility: hidden; }
-    .rotate-y-180 { transform: rotateY(180deg); }
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:13px 22px;border-radius:14px;font-weight:800;font-size:.95rem;transition:transform .15s,box-shadow .2s,background .2s,opacity .2s;user-select:none}
+.btn:hover{transform:translateY(-2px)}.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-em{background:linear-gradient(90deg,#34d399,#14b8a6);color:#052019;box-shadow:0 10px 24px -10px rgba(16,185,129,.7)}
+.btn-amber{background:linear-gradient(90deg,#fbbf24,#fb923c);color:#2a1603;box-shadow:0 10px 24px -10px rgba(245,158,11,.7)}
+.btn-violet{background:linear-gradient(90deg,#c4b5fd,#a78bfa);color:#1b1035}
+.btn-ghost{background:rgba(255,255,255,.05);border:1px solid var(--line2);color:var(--text)}
+.btn-ghost:hover{background:rgba(255,255,255,.1)}
+.btn-sm{padding:9px 14px;font-size:.82rem;border-radius:11px}
+.btn-block{width:100%}
+.icon-btn{height:42px;min-width:42px;padding:0 11px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;gap:7px;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--muted);transition:.2s;font-size:.8rem;font-weight:700}
+.icon-btn:hover{color:#fff;background:rgba(255,255,255,.1)}
 
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #0f172a; }
-    ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 4px; }
-    
-    /* Timer Pulse */
-    @keyframes pulse-border {
-      0% { border-color: rgba(244, 63, 94, 0.4); }
-      50% { border-color: rgba(244, 63, 94, 1); box-shadow: 0 0 15px rgba(244, 63, 94, 0.5); }
-      100% { border-color: rgba(244, 63, 94, 0.4); }
-    }
-    .timer-urgent { animation: pulse-border 1s infinite; color: #f43f5e; }
-  </style>
+.chip{display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:99px;font-size:.7rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;border:1px solid}
+.chip-em{color:var(--em);background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.28)}
+.chip-amber{color:var(--amber);background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.3)}
+.chip-teal{color:var(--teal);background:rgba(45,212,191,.1);border-color:rgba(45,212,191,.3)}
+.chip-sky{color:var(--sky);background:rgba(125,211,252,.1);border-color:rgba(125,211,252,.3)}
+.chip-violet{color:var(--violet);background:rgba(196,181,253,.1);border-color:rgba(196,181,253,.3)}
+.chip-rose{color:var(--rose);background:rgba(251,113,133,.1);border-color:rgba(251,113,133,.3)}
+.chip-plain{color:var(--muted);background:rgba(255,255,255,.04);border-color:var(--line)}
+
+/* Header */
+.topbar{position:sticky;top:0;z-index:60;background:rgba(5,14,11,.86);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid rgba(16,185,129,.18)}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:10px;padding-bottom:10px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;cursor:pointer}
+.logo{width:44px;height:44px;border-radius:13px;background:#fff center/88% no-repeat;box-shadow:0 6px 18px -6px rgba(56,189,248,.6);flex-shrink:0}
+.brand h1{font-size:1.1rem;font-weight:800;letter-spacing:.04em}
+.brand h1 span{color:var(--em)}
+.brand p{font-size:.72rem;color:var(--muted)}
+.hud{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pill{display:flex;align-items:center;gap:10px;background:rgba(15,28,24,.92);border:1px solid var(--line);padding:6px 12px 6px 8px;border-radius:14px;transition:background .4s}
+.pill.flash{background:rgba(16,185,129,.35)}
+.pill .lab{font-size:.6rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--em)}
+.pill .val{font-family:'Outfit';font-weight:800;font-size:.98rem}
+.pill.clock .lab{color:var(--amber)}
+.pill.clock.late{border-color:rgba(251,113,133,.6)}
+.pill.clock.late .val{color:var(--rose)}
+.pill-wood{width:34px;height:34px;flex-shrink:0}
+
+/* Nav */
+.zonenav{padding:12px 0 4px}
+.zonenav .inner{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;background:rgba(10,20,17,.9);border:1px solid var(--line);border-radius:18px;padding:7px}
+.zbtn{padding:10px 6px;border-radius:12px;font-weight:700;font-size:.8rem;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:7px;transition:.2s;border:1px solid transparent}
+.zbtn:hover{color:#fff;background:rgba(255,255,255,.06)}
+.zbtn.active{color:#fff;background:linear-gradient(90deg,rgba(16,185,129,.85),rgba(13,148,136,.85));border-color:rgba(52,211,153,.5)}
+.zbtn .ok{color:var(--em)}
+.zbtn.active .ok{color:#fff}
+
+.screen{display:none;padding-top:22px}
+.screen.active{display:block;animation:fadeUp .45s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* Papel */
+.paper{background:linear-gradient(180deg,#f8f1e0,#efe3c6);color:var(--ink);border-radius:20px;position:relative;box-shadow:0 20px 40px -18px rgba(0,0,0,.7),inset 0 0 60px rgba(160,120,60,.18)}
+.paper::before{content:"";position:absolute;inset:10px;border:1px solid rgba(90,65,35,.25);border-radius:14px;pointer-events:none}
+.paper .script{color:#4a3826}
+.echo{display:flex;gap:14px;align-items:flex-start;padding:16px 18px;border-radius:16px;background:linear-gradient(135deg,rgba(246,238,219,.1),rgba(246,238,219,.03));border:1px solid rgba(246,238,219,.18)}
+.echo .ico{width:36px;height:36px;border-radius:10px;background:rgba(251,191,36,.15);color:var(--amber);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.echo b{display:block;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin-bottom:4px}
+.echo p{font-family:'Cormorant Garamond',serif;font-size:1.14rem;line-height:1.45;color:#efe6cf}
+
+/* Inicio */
+.hero{text-align:center;padding:26px 0 6px}
+.hero .logo-big{width:104px;height:104px;border-radius:28px;background:#fff center/86% no-repeat;margin:0 auto 18px;box-shadow:0 20px 50px -15px rgba(56,189,248,.55)}
+.hero .script{font-size:clamp(2.6rem,7vw,4.6rem);color:#f3e3bd;line-height:1;display:block;margin-top:14px}
+.hero h2{font-size:clamp(2.3rem,7vw,4.6rem);font-weight:800;letter-spacing:.02em;margin-top:2px}
+.grad{background:linear-gradient(90deg,#34d399,#5eead4,#fcd34d);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero .sub{color:var(--muted);font-size:1.05rem;margin-top:10px}
+.facts{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:18px}
+.start-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;margin-top:30px}
+.quote-paper{padding:32px}
+.quote-paper p{font-family:'Cormorant Garamond',serif;font-size:1.24rem;line-height:1.5}
+.quote-paper .script{font-size:2.3rem;display:block;margin-bottom:8px}
+.field{display:block;margin-bottom:14px}
+.field span{display:block;font-size:.72rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.input{width:100%;background:rgba(3,10,8,.55);border:2px solid #1d3029;border-radius:14px;padding:13px 15px;font-size:.96rem;outline:none;transition:border .2s}
+.input:focus{border-color:var(--em)}
+textarea.input{resize:vertical;min-height:86px;line-height:1.5}
+
+/* Prólogo */
+.story{max-width:860px;margin:0 auto}
+.story-page{padding:clamp(26px,5vw,54px);min-height:390px;display:flex;flex-direction:column}
+.story-page .num{font-family:'Outfit';font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:#8a6a45;font-weight:700}
+.story-page .script{font-size:clamp(2.2rem,5vw,3.3rem);margin:6px 0 14px;line-height:1.1}
+.story-page p{font-family:'Cormorant Garamond',serif;font-size:clamp(1.15rem,2.2vw,1.36rem);line-height:1.6;margin-bottom:12px}
+.story-page .ill{font-size:2.6rem;color:#8a6a45;opacity:.75;margin-top:auto;text-align:center;padding-top:10px}
+.story-nav{display:flex;justify-content:space-between;align-items:center;margin-top:18px;gap:10px}
+.dots{display:flex;gap:8px}.dots i{width:9px;height:9px;border-radius:9px;background:#29413a;transition:.3s}.dots i.on{background:var(--amber);width:26px}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:4px 0 10px}
+.legend div{font-family:'Plus Jakarta Sans';font-size:.84rem;background:rgba(90,65,35,.08);border:1px solid rgba(90,65,35,.2);border-radius:10px;padding:8px 10px;line-height:1.35}
+.legend b{display:block;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase}
+
+/* Hub */
+.hub{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+.tree-box{position:relative;max-width:500px;margin:0 auto;aspect-ratio:400/440}
+.tree-svg{width:100%;height:100%;display:block}
+.leafc{transition:fill .8s,opacity .8s}
+.leafc.lit{animation:pop .7s ease;transform-box:fill-box;transform-origin:center}
+@keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+.hot{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;z-index:3}
+.hot .b{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;border:3px solid rgba(255,255,255,.85);animation:ping 2.2s infinite;transition:transform .2s;position:relative}
+.hot:hover .b{transform:scale(1.12)}
+.hot .l{font-size:.68rem;font-weight:800;background:rgba(5,14,11,.88);padding:3px 9px;border-radius:99px;border:1px solid var(--line2);white-space:nowrap}
+.hot.done .b{animation:none;border-color:var(--em)}
+.hot.done .b::after{content:"\f00c";font-family:"Font Awesome 6 Free";font-weight:900;position:absolute;top:-6px;right:-6px;background:var(--em);color:#052019;width:20px;height:20px;border-radius:50%;font-size:.62rem;display:flex;align-items:center;justify-content:center}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(255,255,255,.45)}70%{box-shadow:0 0 0 14px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
+.zcards{display:grid;gap:10px}
+.zcard{display:flex;align-items:center;gap:14px;padding:13px 15px;border-radius:18px;background:rgba(255,255,255,.035);border:1px solid var(--line);text-align:left;transition:.2s;width:100%}
+.zcard:hover{background:rgba(255,255,255,.07);transform:translateX(4px)}
+.zcard .zi{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.zcard h4{font-size:.98rem}
+.zcard p{font-size:.77rem;color:var(--muted);margin-top:2px}
+.zcard .st{margin-left:auto;flex-shrink:0}
+.mission{padding:15px 17px;border-radius:18px;background:linear-gradient(135deg,rgba(251,191,36,.14),rgba(251,146,60,.06));border:1px solid rgba(251,191,36,.3)}
+.mission b{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--amber)}
+
+/* Estación */
+.st-head{max-width:860px;margin:0 auto 22px;text-align:center}
+.st-head h2{font-size:clamp(1.8rem,4vw,2.5rem);font-weight:800;margin:12px 0 6px}
+.st-head .topic{color:var(--muted);font-size:1rem}
+.progress{display:flex;gap:6px;justify-content:center;margin-top:12px}
+.progress i{width:34px;height:6px;border-radius:6px;background:#22362f}
+.progress i.ok{background:var(--em)}.progress i.no{background:var(--rose)}.progress i.cur{background:var(--sky)}
+.st-body{max-width:900px;margin:0 auto}
+.intro-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:20px;align-items:start}
+.book-card{padding:28px 30px}
+.book-card .lab{font-family:'Outfit';font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:#8a6a45;font-weight:700}
+.book-card .script{font-size:2.2rem;line-height:1.1;margin:6px 0 10px}
+.book-card p{font-family:'Cormorant Garamond',serif;font-size:1.2rem;line-height:1.5}
+.info{padding:18px;border-radius:18px;background:rgba(5,14,11,.6);border:1px solid #1e332c}
+.info + .info{margin-top:12px}
+.info > b{display:flex;gap:8px;align-items:center;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+.info p{font-size:.92rem;line-height:1.55;color:#d6e4de}
+.info p b{color:#fff}
+.q-title{font-size:clamp(1.15rem,2.4vw,1.45rem);font-weight:700;line-height:1.35}
+.q-ctx{font-family:'Cormorant Garamond',serif;font-size:1.2rem;line-height:1.5;color:#fde9b8;font-style:italic;padding:12px 16px;border-left:3px solid var(--amber);background:rgba(251,191,36,.06);border-radius:0 14px 14px 0;margin-top:12px}
+.opts{display:grid;gap:10px;margin-top:16px}
+.opt{display:flex;gap:12px;align-items:flex-start;text-align:left;padding:14px 16px;border-radius:14px;border:1.5px solid #233a33;background:rgba(5,14,11,.55);font-size:.94rem;font-weight:500;line-height:1.45;transition:.18s}
+.opt:hover:not(:disabled){border-color:var(--em);background:rgba(16,185,129,.07)}
+.opt:disabled{cursor:default}
+.opt .k{width:26px;height:26px;border-radius:8px;background:#1b2c26;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.78rem;flex-shrink:0;color:var(--muted)}
+.opt.ok{border-color:var(--em);background:rgba(16,185,129,.15)}
+.opt.ok .k{background:var(--em);color:#052019}
+.opt.bad{border-color:var(--rose);background:rgba(251,113,133,.1)}
+.opt.bad .k{background:var(--rose);color:#2a0710}
+.opt.mid{border-color:var(--amber);background:rgba(251,191,36,.1)}
+.fb{margin-top:16px;padding:18px;border-radius:18px;border:1.5px solid;animation:fadeUp .35s both}
+.fb.good{border-color:rgba(52,211,153,.5);background:rgba(16,185,129,.08)}
+.fb.mid{border-color:rgba(251,191,36,.5);background:rgba(251,191,36,.07)}
+.fb.bad{border-color:rgba(251,113,133,.5);background:rgba(251,113,133,.07)}
+.fb h4{font-size:1.05rem;display:flex;gap:10px;align-items:center}
+.fb p{color:#d8e6e0;line-height:1.55;margin-top:8px;font-size:.93rem}
+.fb .src{display:block;margin-top:8px;font-size:.76rem;color:var(--dim)}
+.sort-list{display:grid;gap:10px;margin-top:16px}
+.sort-item{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:14px;border:1.5px solid #233a33;background:rgba(5,14,11,.55);flex-wrap:wrap}
+.sort-item span{font-size:.93rem;line-height:1.4;flex:1;min-width:200px}
+.seg{display:inline-flex;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px;flex-wrap:wrap}
+.seg button{padding:8px 12px;border-radius:9px;font-size:.8rem;font-weight:700;color:var(--muted)}
+.seg button.on{background:var(--sky);color:#04202c}
+.sort-item.ok{border-color:var(--em)}.sort-item.bad{border-color:var(--rose)}
+.sort-item .mark{font-size:.8rem;font-weight:800}
+.order-pool{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.order-pool button{padding:11px 16px;border-radius:12px;border:1.5px solid #2a443b;font-weight:700;font-size:.9rem;background:rgba(5,14,11,.6);transition:.15s}
+.order-pool button:hover{border-color:var(--sky)}
+.order-pool button.shake{animation:shake .35s;border-color:var(--rose)}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.ladder{display:grid;gap:8px;margin-top:18px}
+.ladder div{display:flex;gap:12px;align-items:center;padding:10px 14px;border-radius:12px;background:rgba(16,185,129,.1);border:1px solid rgba(52,211,153,.35);font-weight:700;animation:fadeUp .3s both}
+.ladder div i{width:26px;height:26px;border-radius:8px;background:var(--em);color:#052019;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:.8rem;font-weight:800}
+.ladder div.empty{background:transparent;border-style:dashed;border-color:#2a443b;color:var(--dim);font-weight:500}
+.ladder div.empty i{background:#1b2c26;color:var(--dim)}
+.matrix-legend{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
+.matrix-legend div{padding:10px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line);font-size:.76rem;line-height:1.35;text-align:center}
+.matrix-legend b{display:block;font-size:.84rem;color:#fff;margin-bottom:2px}
+.cont{display:flex;justify-content:flex-end;margin-top:16px;gap:10px;flex-wrap:wrap}
+
+/* Ruleta */
+.wheel-grid{display:grid;grid-template-columns:.85fr 1.15fr;gap:26px;align-items:start;margin-top:10px}
+.wheel-wrap{position:relative;width:100%;max-width:340px;margin:0 auto;aspect-ratio:1}
+.wheel-wrap canvas{width:100%;height:100%;border-radius:50%;box-shadow:0 0 40px rgba(16,185,129,.22);display:block}
+.wheel-pin{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:2.4rem;color:var(--amber);z-index:3;filter:drop-shadow(0 4px 4px rgba(0,0,0,.6))}
+.spin-btn{position:absolute;inset:0;margin:auto;width:82px;height:82px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#fde047);color:#1c1003;font-weight:900;font-size:.88rem;letter-spacing:.05em;border:5px solid #0c1714;box-shadow:0 10px 30px rgba(0,0,0,.6);transition:transform .2s;z-index:2}
+.spin-btn:hover{transform:scale(1.08)}.spin-btn:disabled{filter:grayscale(.6);cursor:default;transform:none}
+.timer{display:flex;align-items:center;gap:14px;padding:10px 14px;border-radius:16px;background:rgba(5,14,11,.7);border:1px solid var(--line2);margin-top:14px}
+.timer .tt{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1.5rem;font-weight:800}
+.timer .tl{font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:800}
+.timer.urgent{border-color:var(--rose)}.timer.urgent .tt{color:var(--rose)}
+
+/* Estación terminada */
+.done-card{max-width:720px;margin:0 auto;text-align:center;padding:30px}
+.done-card .ring-ico{width:86px;height:86px;margin:0 auto}
+.done-card h3{font-size:1.8rem;margin:14px 0 8px}
+
+/* Frutos / muro */
+.note-form{max-width:780px;margin:0 auto 30px;padding:24px;border-radius:24px;background:rgba(5,14,11,.7);border:1px solid #20372f}
+.prompts{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}
+.prompts button{font-size:.78rem;padding:7px 12px;border-radius:99px;border:1px solid rgba(196,181,253,.35);color:var(--violet);background:rgba(196,181,253,.07);font-weight:600}
+.prompts button:hover,.prompts button.on{background:rgba(196,181,253,.2)}
+.notes{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.note{padding:20px;border-radius:20px;background:linear-gradient(160deg,#f8f1e0,#ebdcb9);color:var(--ink);position:relative;box-shadow:0 14px 30px -14px rgba(0,0,0,.7);animation:fadeUp .5s both}
+.note:nth-child(3n+1){transform:rotate(-.8deg)}.note:nth-child(3n+2){transform:rotate(.6deg)}
+.note .h{display:flex;justify-content:space-between;font-family:'Outfit';font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:#8a6a45;font-weight:700}
+.note p{font-family:'Cormorant Garamond',serif;font-size:1.16rem;line-height:1.42;margin:8px 0}
+.note .a{text-align:right;font-weight:700;font-size:.8rem;color:#6b4a22}
+.note .del{position:absolute;top:8px;right:10px;color:#a0784a;font-size:.8rem;opacity:.55}
+.note .del:hover{opacity:1}
+
+/* Final */
+.final-hero{text-align:center}
+.final-hero .script{font-size:clamp(2.5rem,7vw,4.2rem);color:#f3e3bd;display:block}
+.final-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:28px;align-items:start;margin-top:22px}
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.stat{padding:14px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid var(--line);text-align:center}
+.stat b{display:block;font-family:'Outfit';font-size:1.6rem}
+.stat span{font-size:.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.chain{display:grid;gap:8px;margin-top:12px}
+.chain div{display:flex;gap:12px;align-items:flex-start;padding:11px 13px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid var(--line);font-size:.88rem;line-height:1.45}
+.chain div i{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* Modales */
+.modal{position:fixed;inset:0;z-index:100;background:rgba(2,8,6,.78);backdrop-filter:blur(6px);display:flex;align-items:flex-start;justify-content:center;padding:36px 14px;overflow:auto;animation:fadeIn .25s}
+@keyframes fadeIn{from{opacity:0}}
+.modal-box{width:100%;max-width:940px;background:#0b1714;border:1px solid var(--line2);border-radius:26px;padding:clamp(20px,4vw,38px);position:relative;animation:fadeUp .35s both}
+.modal-box.sm{max-width:470px}
+.modal-x{position:absolute;top:14px;right:14px}
+.modal-box h3{font-size:1.55rem;margin-bottom:6px}
+.chars{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:18px}
+.char{padding:20px;border-radius:18px}
+.char h4{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:700}
+.char .role{font-family:'Outfit';font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:#8a6a45;font-weight:700}
+.char p{font-family:'Cormorant Garamond',serif;font-size:1.1rem;line-height:1.45;margin-top:8px}
+.char .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.char .tags span{font-size:.68rem;font-weight:700;padding:4px 9px;border-radius:99px;background:rgba(90,65,35,.12);color:#5a4128}
+.dbars{display:grid;gap:9px;margin-top:10px}
+.dbar{display:grid;grid-template-columns:minmax(150px,1.4fr) 2fr 52px;gap:10px;align-items:center;font-size:.8rem}
+.dbar .tr{height:10px;border-radius:9px;background:#1b2c26;overflow:hidden}
+.dbar .tr i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,#34d399,#a3e635)}
+.dbar b{text-align:right}
+.qblock{padding:18px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid var(--line)}
+.qblock h4{font-size:.95rem}
+.map-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:.85rem}
+.map-table td,.map-table th{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.45}
+.map-table th{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.steps{display:grid;gap:10px;margin-top:12px;counter-reset:s}
+.steps li{list-style:none;display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid var(--line);font-size:.9rem;line-height:1.5}
+.steps li::before{counter-increment:s;content:counter(s);width:26px;height:26px;border-radius:8px;background:var(--em);color:#052019;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.8rem}
+.cgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.cgrid div{padding:12px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid var(--line);font-size:.84rem;line-height:1.45}
+.cgrid b{display:block;color:var(--amber);margin-bottom:3px}
+.ba{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin-top:10px}
+.ba div{padding:12px 14px;border-radius:14px;font-size:.88rem;line-height:1.45}
+.ba .b1{background:rgba(251,113,133,.07);border:1px solid rgba(251,113,133,.3)}
+.ba .b2{background:rgba(16,185,129,.08);border:1px solid rgba(52,211,153,.35)}
+.ba i{color:var(--amber)}
+
+.toasts{position:fixed;right:16px;bottom:16px;z-index:200;display:grid;gap:10px;max-width:370px}
+.toast{padding:14px 16px;border-radius:16px;background:#0f201b;border:1px solid var(--line2);box-shadow:0 18px 40px -12px #000;font-size:.88rem;line-height:1.45;display:flex;gap:12px;align-items:flex-start;animation:tin .35s both}
+.toast.out{animation:tout .3s both}
+.toast .ti{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.toast.ring{border-color:rgba(52,211,153,.5)}.toast.ring .ti{background:rgba(52,211,153,.18);color:var(--em)}
+.toast.warn{border-color:rgba(251,191,36,.5)}.toast.warn .ti{background:rgba(251,191,36,.18);color:var(--amber)}
+.toast.info .ti{background:rgba(125,211,252,.15);color:var(--sky)}
+.toast span{color:var(--muted);font-size:.8rem}
+@keyframes tin{from{opacity:0;transform:translateX(30px)}}
+@keyframes tout{to{opacity:0;transform:translateX(30px)}}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:150}
+
+footer{border-top:1px solid #12231d;background:rgba(3,9,7,.9);padding:28px 0;text-align:center}
+footer p{font-size:.78rem;color:var(--dim);line-height:1.7}
+footer strong{color:var(--muted)}
+
+@media (max-width:980px){
+  .hub,.start-grid,.final-grid,.grid2,.intro-grid,.wheel-grid{grid-template-columns:1fr}
+  .notes{grid-template-columns:repeat(2,1fr)}
+  .zonenav .inner{grid-template-columns:repeat(3,1fr)}
+}
+@media (max-width:680px){
+  .notes,.cgrid,.chars{grid-template-columns:1fr}
+  .matrix-legend{grid-template-columns:repeat(2,1fr)}
+  .brand p,.brand h1 span{display:none}
+  .icon-btn .tx{display:none}
+  .icon-btn{height:38px;min-width:38px;padding:0 9px}
+  .topbar .wrap{gap:8px}
+  .hud{gap:6px}
+  .zbtn{font-size:.74rem;padding:9px 4px}
+  .story-nav .btn{padding:11px 14px}
+  .stat-row{grid-template-columns:1fr 1fr 1fr}
+  .dbar{grid-template-columns:1fr 1fr 44px}
+  .ba{grid-template-columns:1fr}
+  .ba i{transform:rotate(90deg);justify-self:center}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
 </head>
-<body class="bg-mesh min-h-screen flex flex-col antialiased">
 
-  <!-- HEADER / BRANDING -->
-  <header class="border-b border-emerald-900/50 bg-slate-950/80 backdrop-blur-xl sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
-      
-      <div class="flex items-center space-x-3">
-        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-700 flex items-center justify-center text-slate-950 font-extrabold text-2xl shadow-lg shadow-emerald-900/40 transform hover:rotate-12 transition">
-          <i class="fa-solid fa-tree"></i>
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <h1 class="font-extrabold text-xl text-white tracking-wide">CORE-LAB <span class="text-emerald-400">ARCADE</span></h1>
-            <span class="bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">V4.0</span>
-          </div>
-          <p class="text-xs text-slate-400">Equipo Horizonte | <span class="italic text-emerald-200">"Cada meta empieza con un paso"</span></p>
-        </div>
+<body>
+<div class="bg-layer"></div>
+<div class="leaves" id="leaves"></div>
+<canvas id="fx"></canvas>
+<div class="toasts" id="toasts"></div>
+
+<!-- ================= ENCABEZADO ================= -->
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand" onclick="goHome()" title="Inicio">
+      <div class="logo" style="background-image:url(data:image/jpeg;base64,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)"></div>
+      <div>
+        <h1>CORE-LAB <span>· LA MEMORIA DEL ÁRBOL</span></h1>
+        <p>Equipo Horizonte · <em>«Cada meta empieza con un paso»</em></p>
       </div>
-
-      <!-- Action: Tree Growth Meter -->
-      <div class="flex items-center gap-4 bg-slate-900/80 border border-slate-700/50 px-5 py-2 rounded-2xl shadow-inner">
-        <div class="text-right">
-          <div class="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Memoria del Árbol</div>
-          <div id="tree-rings-count" class="text-base font-extrabold text-white">0 / 10 Anillos</div>
-        </div>
-        <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-900 font-black shadow-lg shadow-emerald-500/20">
-          <i class="fa-solid fa-ring"></i>
-        </div>
+    </div>
+    <div class="hud">
+      <div class="pill clock" id="clock-pill" title="Tiempo de la experiencia (máximo 15 minutos)">
+        <i class="fa-solid fa-hourglass-half" style="color:var(--amber);margin-left:4px"></i>
+        <div><div class="lab">Tiempo</div><div class="val" id="clock">15:00</div></div>
       </div>
-
+      <div class="pill" id="ring-pill" title="Anillos de tu árbol">
+        <div class="pill-wood" id="pill-wood"></div>
+        <div><div class="lab">Anillos</div><div class="val" id="ring-count">0 / 6</div></div>
+      </div>
+      <button class="icon-btn" onclick="openModal('m-libro')" title="El libro"><i class="fa-solid fa-book-open"></i><span class="tx">El libro</span></button>
+      <button class="icon-btn" onclick="openModal('m-equipo')" title="Nuestro crecimiento como equipo"><i class="fa-solid fa-people-group"></i><span class="tx">Equipo</span></button>
+      <button class="icon-btn" onclick="openModal('m-proyecto')" title="El proyecto"><i class="fa-solid fa-chart-pie"></i></button>
+      <button class="icon-btn" onclick="openModal('m-guia')" title="Cómo se juega"><i class="fa-solid fa-circle-question"></i></button>
+      <button class="icon-btn" onclick="toggleSound()" title="Sonido" id="sound-btn"><i class="fa-solid fa-volume-high"></i></button>
+      <button class="icon-btn" onclick="confirmReset()" title="Nueva partida"><i class="fa-solid fa-rotate-left"></i></button>
     </div>
-  </header>
+  </div>
+</header>
 
-  <!-- HERO SECTION WITH BOOK METAPHOR -->
-  <section class="max-w-7xl mx-auto px-4 pt-10 pb-6 text-center relative">
-    <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] opacity-5 pointer-events-none"></div>
-    
-    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold mb-6 uppercase tracking-widest shadow-lg shadow-amber-900/20">
-      <i class="fa-solid fa-book-open"></i> Ecosistema de Innovación Humana
-    </div>
-    
-    <h2 class="text-4xl md:text-6xl font-extrabold text-white max-w-4xl mx-auto leading-tight drop-shadow-lg">
-      Transformando la ética en <br/>
-      <span class="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">Práctica Vivencial</span>
-    </h2>
-    
-    <blockquote class="text-slate-300 italic text-sm md:text-lg max-w-3xl mx-auto mt-6 font-light bg-slate-900/50 p-4 rounded-2xl border border-slate-800">
-      "Un árbol guarda en sus anillos la historia de cada año que ha vivido... Las cosas importantes no se dicen con palabras grandes, sino con detalles pequeños. Nuestra memoria está en lo que hacemos hoy."
-    </blockquote>
-    
-    <!-- Valores del equipo -->
-    <div class="flex flex-wrap justify-center gap-3 mt-6">
-      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-800 px-3 py-1 rounded-full"><i class="fa-solid fa-mountain text-emerald-500"></i> Perseverancia</span>
-      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-800 px-3 py-1 rounded-full"><i class="fa-solid fa-scale-balanced text-emerald-500"></i> Honestidad</span>
-      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-800 px-3 py-1 rounded-full"><i class="fa-solid fa-handshake-angle text-emerald-500"></i> Respeto</span>
-      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-800 px-3 py-1 rounded-full"><i class="fa-solid fa-hammer text-emerald-500"></i> Esfuerzo</span>
-      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-800 px-3 py-1 rounded-full"><i class="fa-solid fa-people-group text-emerald-500"></i> Solidaridad</span>
-    </div>
-  </section>
+<!-- ================= NAVEGACIÓN ================= -->
+<nav class="zonenav" id="zonenav" hidden>
+  <div class="wrap"><div class="inner">
+    <button class="zbtn" data-go="hub"><i class="fa-solid fa-tree"></i> Mi árbol</button>
+    <button class="zbtn" data-st="raices"><i class="fa-solid fa-seedling" style="color:#fbbf24"></i> Raíces <i class="fa-solid fa-check ok" hidden></i></button>
+    <button class="zbtn" data-st="tronco"><i class="fa-solid fa-gem" style="color:#34d399"></i> Tronco <i class="fa-solid fa-check ok" hidden></i></button>
+    <button class="zbtn" data-st="ramas"><i class="fa-solid fa-code-branch" style="color:#7dd3fc"></i> Ramas <i class="fa-solid fa-check ok" hidden></i></button>
+    <button class="zbtn" data-st="hojas"><i class="fa-solid fa-leaf" style="color:#2dd4bf"></i> Hojas <i class="fa-solid fa-check ok" hidden></i></button>
+    <button class="zbtn" data-go="frutos"><i class="fa-solid fa-apple-whole" style="color:#c4b5fd"></i> Frutos <i class="fa-solid fa-check ok" hidden></i></button>
+  </div></div>
+</nav>
 
-  <!-- MAIN NAVIGATION TABS -->
-  <div class="max-w-7xl mx-auto px-4 my-8 relative z-10">
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-900/90 p-2 rounded-2xl border border-slate-700 shadow-2xl">
-      <button onclick="switchTab('arcade-tronco')" id="tab-tronco" class="tab-btn py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-900/50 border border-emerald-500/50">
-        <i class="fa-solid fa-dharmachakra"></i>
-        <span>1. El Tronco (Dilemas)</span>
-      </button>
-      <button onclick="switchTab('arcade-raices')" id="tab-raices" class="tab-btn py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent">
-        <i class="fa-solid fa-seedling text-amber-500"></i>
-        <span>2. Las Raíces (Estrés)</span>
-      </button>
-      <button onclick="switchTab('arcade-hojas')" id="tab-hojas" class="tab-btn py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent">
-        <i class="fa-solid fa-leaf text-teal-400"></i>
-        <span>3. Las Hojas (Empatía)</span>
-      </button>
-      <button onclick="switchTab('arcade-muro')" id="tab-muro" class="tab-btn py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent">
-        <i class="fa-solid fa-clipboard-list text-emerald-400"></i>
-        <span>4. Bitácora (Muro)</span>
-      </button>
+<main class="wrap">
+
+<!-- ================= INICIO ================= -->
+<section class="screen active" id="s-start">
+  <div class="hero">
+    <div class="logo-big" style="background-image:url(data:image/jpeg;base64,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)"></div>
+    <span class="chip chip-amber"><i class="fa-solid fa-book-open"></i> Core 1 · Persona y Autoconocimiento</span>
+    <span class="script">La memoria del árbol</span>
+    <h2>CORE-<span class="grad">LAB</span></h2>
+    <p class="sub">Un juego para que los estudiantes de Core 5 revivan Core 1 en la Feria Core</p>
+    <div class="facts">
+      <span class="chip chip-plain"><i class="fa-solid fa-hourglass-half" style="color:#fbbf24"></i> 15 minutos</span>
+      <span class="chip chip-plain"><i class="fa-solid fa-users" style="color:#34d399"></i> Equipos de 2 a 5</span>
+      <span class="chip chip-plain"><i class="fa-solid fa-tree" style="color:#7dd3fc"></i> 5 estaciones</span>
+      <span class="chip chip-plain"><i class="fa-solid fa-mobile-screen" style="color:#c4b5fd"></i> Celular o pantalla</span>
     </div>
   </div>
 
-  <!-- INTERACTIVE PLAYGROUND CONTAINER -->
-  <main class="max-w-7xl mx-auto px-4 pb-16 flex-grow w-full z-10 relative">
-
-    <!-- TAB 1: RULETA DE DILEMAS ÉTICOS -->
-    <section id="arcade-tronco" class="tab-content space-y-6">
-      <div class="glass-card rounded-[2rem] p-6 md:p-10 border-emerald-500/30 relative overflow-hidden">
-        
-        <!-- Timer Widget -->
-        <div id="timer-widget" class="absolute top-6 right-6 bg-slate-900 border-2 border-slate-700 px-4 py-2 rounded-xl flex items-center gap-3 hidden">
-          <i class="fa-solid fa-stopwatch text-xl text-emerald-400"></i>
-          <div class="text-right">
-            <div class="text-[9px] text-slate-400 uppercase font-bold">Tiempo de Reto</div>
-            <div id="time-display" class="font-mono text-xl font-bold text-white">05:00</div>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center mt-8 lg:mt-0">
-          
-          <!-- Ruleta Visual -->
-          <div class="lg:col-span-5 flex flex-col items-center justify-center">
-            <div class="relative w-72 h-72 md:w-96 md:h-96 flex items-center justify-center">
-              
-              <!-- Indicator Arrow -->
-              <div class="absolute -top-4 z-20 text-amber-400 text-4xl filter drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
-                <i class="fa-solid fa-caret-down"></i>
-              </div>
-
-              <!-- Canvas Wheel -->
-              <canvas id="wheelCanvas" width="380" height="380" class="w-full h-full rounded-full shadow-[0_0_40px_rgba(16,185,129,0.2)] border-[6px] border-slate-800"></canvas>
-              
-              <!-- Center Button -->
-              <button onclick="spinWheel()" id="spin-btn" class="absolute w-20 h-20 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-300 text-slate-950 font-black text-base uppercase shadow-2xl hover:scale-110 active:scale-95 transition-all flex items-center justify-center border-4 border-slate-900 z-10">
-                GIRAR
-              </button>
-            </div>
-            
-            <p class="text-sm text-slate-400 mt-6 text-center bg-slate-900/50 px-4 py-2 rounded-lg inline-block">
-              Gira para enfrentar un dilema. <strong class="text-amber-400">¡Tienes 5 minutos para debatir!</strong>
-            </p>
-          </div>
-
-          <!-- Dilema Result Area -->
-          <div class="lg:col-span-7 space-y-5">
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">
-              <i class="fa-solid fa-ring"></i> El Tronco del Árbol • Construyendo Criterio
-            </div>
-            
-            <h3 id="dilemma-title" class="text-3xl font-extrabold text-white leading-tight">¡Gira la ruleta para comenzar tu reto!</h3>
-            <p id="dilemma-desc" class="text-slate-300 text-base leading-relaxed">
-              El aprendizaje no es teoría abstracta. Al girar, el equipo tendrá <strong>5 minutos</strong> para llegar a un consenso sobre una situación real. Solo así ganarán un anillo para el árbol.
-            </p>
-
-            <!-- Dilema Dynamic Options -->
-            <div id="dilemma-options" class="space-y-3 pt-4 hidden">
-              <!-- Rendered via JS -->
-            </div>
-
-            <!-- Action button after option selected -->
-            <div id="dilemma-action" class="pt-6 hidden">
-              <button onclick="resolveDilemma()" class="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-extrabold rounded-xl text-base transition-all shadow-[0_10px_20px_-10px_rgba(16,185,129,0.6)] flex items-center justify-center gap-3 transform hover:-translate-y-1">
-                <i class="fa-solid fa-gavel"></i> Sellar Decisión y Ganar Anillo
-              </button>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 2: MEDIDOR DE ESTRÉS Y CARTAS DE RESILIENCIA -->
-    <section id="arcade-raices" class="tab-content hidden space-y-6">
-      <div class="glass-card rounded-[2rem] p-6 md:p-10 border-amber-500/30">
-        
-        <div class="max-w-3xl mx-auto text-center space-y-4 mb-10">
-          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-bold border border-amber-500/20">
-            <i class="fa-solid fa-seedling"></i> Las Raíces del Árbol • Autocuidado
-          </div>
-          <h3 class="text-3xl font-extrabold text-white">Diagnóstico de Agotamiento (Burnout)</h3>
-          <p class="text-slate-300 text-base">
-            El 60% de los estudiantes considera que hay desconexión entre la exigencia universitaria y su bienestar. Evalúa la salud de tus raíces en 3 preguntas rápidas para desbloquear tu <strong>Reto de Resiliencia de 5 Minutos</strong>.
-          </p>
-        </div>
-
-        <!-- Quiz Container -->
-        <div id="stress-quiz" class="max-w-2xl mx-auto space-y-6">
-          
-          <div class="bg-slate-900/80 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-4">
-            <label class="text-base font-semibold text-slate-100 block">1. Frente a tu carga de proyectos técnicos (como programación), ¿cómo está tu energía hoy?</label>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <button type="button" onclick="setQuizAnswer(0, 1)" class="q-btn q0 py-3 px-4 rounded-xl border border-slate-600 text-sm font-medium text-slate-300 hover:border-emerald-500 hover:bg-slate-800 transition">Equilibrada</button>
-              <button type="button" onclick="setQuizAnswer(0, 2)" class="q-btn q0 py-3 px-4 rounded-xl border border-slate-600 text-sm font-medium text-slate-300 hover:border-amber-500 hover:bg-slate-800 transition">Al límite, pero funcional</button>
-              <button type="button" onclick="setQuizAnswer(0, 3)" class="q-btn q0 py-3 px-4 rounded-xl border border-slate-600 text-sm font-medium text-slate-300 hover:border-rose-500 hover:bg-slate-800 transition">Completamente agotado/a</button>
-            </div>
-          </div>
-
-          <div class="bg-slate-900/80 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-4">
-            <label class="text-base font-semibold text-slate-100 block">2. Cuando tomas clases de "ética" o "humanidades", ¿qué sientes internamente?</label>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <button type="button" onclick="setQuizAnswer(1, 1)" class="q-btn q1 py-3 px-4 rounded-xl border border-slate-600 text-sm font-medium text-slate-300 hover:border-emerald-500 hover:bg-slate-800 transition">Conexión con mi vida</button>
-              <button type="button" onclick="setQuizAnswer(1, 2)" class="q-btn q1 py-3 px-4 rounded-xl border border-slate-600 text-sm font-medium text-slate-300 hover:border-amber-500 hover:bg-slate-800 transition">Duda de su utilidad</button>
-              <button type="button" onclick="setQuizAnswer(1, 3)" class="q-btn q1 py-3 px-4 rounded-xl border border-slate-600 text-sm font-medium text-slate-300 hover:border-rose-500 hover:bg-slate-800 transition">Es puro relleno / Quita tiempo</button>
-            </div>
-          </div>
-
-          <div class="bg-slate-900/80 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-4">
-            <label class="text-base font-semibold text-slate-100 block">3. ¿Cuánto tiempo consciente has dedicado a pausar tu mente (sin pantallas) en las últimas 48h?</label>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <button type="button" onclick="setQuizAnswer(2, 1)" class="q-btn q2 py-3 px-4 rounded-xl border border-slate-600 text-sm font-medium text-slate-300 hover:border-emerald-500 hover:bg-slate-800 transition">Más de 1 hora</button>
-              <button type="button" onclick="setQuizAnswer(2, 2)" class="q-btn q2 py-3 px-4 rounded-xl border border-slate-600 text-sm font-medium text-slate-300 hover:border-amber-500 hover:bg-slate-800 transition">Unos minutos apenas</button>
-              <button type="button" onclick="setQuizAnswer(2, 3)" class="q-btn q2 py-3 px-4 rounded-xl border border-slate-600 text-sm font-medium text-slate-300 hover:border-rose-500 hover:bg-slate-800 transition">Absolutamente nada</button>
-            </div>
-          </div>
-
-          <button onclick="calculateResilienceCard()" class="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold rounded-xl text-base transition-all shadow-[0_10px_20px_-10px_rgba(245,158,11,0.6)] transform hover:-translate-y-1">
-            <i class="fa-solid fa-stethoscope"></i> Obtener mi Carta de Resiliencia Personalizada
-          </button>
-
-        </div>
-
-        <!-- Result Card Area -->
-        <div id="resilience-result" class="max-w-md mx-auto space-y-6 hidden">
-          <div class="p-8 rounded-[2rem] bg-slate-900 border-2 border-amber-500/40 text-center space-y-5 shadow-2xl relative overflow-hidden">
-            <div class="absolute inset-0 bg-gradient-to-b from-amber-500/10 to-transparent pointer-events-none"></div>
-            
-            <div class="w-20 h-20 bg-amber-500/20 text-amber-400 rounded-3xl flex items-center justify-center text-4xl mx-auto shadow-inner border border-amber-500/20">
-              <i id="resilience-icon" class="fa-solid fa-battery-quarter"></i>
-            </div>
-            
-            <div>
-              <span id="resilience-badge" class="text-[10px] font-black uppercase tracking-widest text-amber-400 bg-amber-500/10 px-4 py-1.5 rounded-full border border-amber-500/30">Alerta de Raíces Secas</span>
-              <h4 id="resilience-title" class="text-2xl font-extrabold text-white mt-3">Sobrecarga Técnica Detectada</h4>
-            </div>
-
-            <p id="resilience-text" class="text-sm text-slate-300 leading-relaxed italic bg-slate-950/50 p-4 rounded-xl border border-slate-800">
-              "Si las raíces se secan por enfocarse solo en crecer hacia arriba, el árbol entero cae ante el primer viento fuerte."
-            </p>
-
-            <div class="p-5 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl text-left border border-amber-500/50 shadow-lg relative">
-              <div class="absolute -top-3 -right-3 w-8 h-8 bg-rose-500 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-lg animate-bounce">5m</div>
-              <span class="text-xs font-black text-amber-400 uppercase tracking-wider block mb-2"><i class="fa-solid fa-fire"></i> Reto Inmediato (5 Minutos):</span>
-              <p id="resilience-challenge" class="text-sm text-slate-100 font-medium">Cierra todas las pestañas de código. Durante 5 minutos exactos, habla con la persona a tu lado exclusivamente sobre algo que te apasionaba cuando tenías 10 años.</p>
-            </div>
-
-            <div class="flex gap-3 pt-4">
-              <button onclick="resetQuiz()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition">
-                <i class="fa-solid fa-rotate-left"></i> Repetir
-              </button>
-              <button onclick="completeRootsRing()" class="flex-[2] py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-extrabold rounded-xl text-sm transition shadow-lg">
-                ¡Reto Cumplido! (+1 Anillo)
-              </button>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- TAB 3: EMPATÍA FLASH (FLASHCARDS DE RELACIONES) -->
-    <section id="arcade-hojas" class="tab-content hidden space-y-6">
-      <div class="glass-card rounded-[2rem] p-6 md:p-10 border-teal-500/30">
-        
-        <div class="max-w-3xl mx-auto text-center space-y-4 mb-10">
-          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 text-teal-400 text-xs font-bold border border-teal-500/20">
-            <i class="fa-solid fa-leaf"></i> Las Hojas del Árbol • Empatía Viva
-          </div>
-          <h3 class="text-3xl font-extrabold text-white">Decodificador de Relaciones</h3>
-          <p class="text-slate-300 text-base">
-            No somos máquinas procesando datos. Toca las tarjetas para enfrentar micro-casos donde aplicar los valores del Equipo Horizonte: <strong>Solidaridad, Honestidad y Respeto</strong>.
-          </p>
-        </div>
-
-        <!-- Cards Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          
-          <!-- Flashcard 1 -->
-          <div class="perspective h-80 cursor-pointer group" onclick="flipCard(this)">
-            <div class="card-inner relative w-full h-full transform-style-3d transition-transform duration-700">
-              <!-- Front -->
-              <div class="absolute inset-0 bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 flex flex-col justify-between backface-hidden shadow-xl group-hover:border-teal-500/50 transition-colors">
-                <div>
-                  <div class="flex justify-between items-start">
-                    <span class="text-[10px] font-black uppercase tracking-wider text-teal-400 bg-teal-500/10 px-3 py-1.5 rounded-full border border-teal-500/20">Solidaridad</span>
-                    <i class="fa-solid fa-people-group text-slate-600 text-xl"></i>
-                  </div>
-                  <h4 class="text-xl font-bold text-white mt-5">El compañero fantasma</h4>
-                  <p class="text-sm text-slate-400 mt-3 leading-relaxed">Un integrante de tu grupo de ingeniería no responde los mensajes del proyecto final a 2 días de la entrega crucial.</p>
-                </div>
-                <div class="text-center text-xs font-black uppercase tracking-widest text-teal-500 flex items-center justify-center gap-2 bg-slate-800/50 py-3 rounded-xl">
-                  Revelar Acción <i class="fa-solid fa-arrow-rotate-right"></i>
-                </div>
-              </div>
-              <!-- Back -->
-              <div class="absolute inset-0 bg-gradient-to-br from-teal-900 to-slate-900 border-2 border-teal-400 rounded-3xl p-6 flex flex-col justify-between rotate-y-180 backface-hidden shadow-[0_0_30px_rgba(20,184,166,0.3)]">
-                <div>
-                  <span class="text-[10px] font-black uppercase tracking-wider text-teal-300">Práctica Vivencial</span>
-                  <p class="text-sm text-slate-200 mt-4 leading-relaxed font-medium">
-                    En lugar de sacarlo del grupo por "irresponsable", le escribes por privado: <em>"¿Todo está bien en casa? Notamos que no estás conectado"</em>. Descubres que está atravesando un duelo familiar severo.
-                  </p>
-                </div>
-                <button onclick="event.stopPropagation(); completeLeafCard(1);" class="w-full py-3 bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold text-sm rounded-xl transition shadow-lg transform hover:-translate-y-1">
-                  Integrar Aprendizaje
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Flashcard 2 -->
-          <div class="perspective h-80 cursor-pointer group" onclick="flipCard(this)">
-            <div class="card-inner relative w-full h-full transform-style-3d transition-transform duration-700">
-              <!-- Front -->
-              <div class="absolute inset-0 bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 flex flex-col justify-between backface-hidden shadow-xl group-hover:border-teal-500/50 transition-colors">
-                <div>
-                  <div class="flex justify-between items-start">
-                    <span class="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 px-3 py-1.5 rounded-full border border-amber-500/20">Honestidad</span>
-                    <i class="fa-solid fa-scale-balanced text-slate-600 text-xl"></i>
-                  </div>
-                  <h4 class="text-xl font-bold text-white mt-5">El atajo tecnológico</h4>
-                  <p class="text-sm text-slate-400 mt-3 leading-relaxed">Te das cuenta de que la IA generó un código que funciona perfecto, pero tú no entiendes cómo, y el profesor va a evaluarlo oralmente.</p>
-                </div>
-                <div class="text-center text-xs font-black uppercase tracking-widest text-teal-500 flex items-center justify-center gap-2 bg-slate-800/50 py-3 rounded-xl">
-                  Revelar Acción <i class="fa-solid fa-arrow-rotate-right"></i>
-                </div>
-              </div>
-              <!-- Back -->
-              <div class="absolute inset-0 bg-gradient-to-br from-amber-900 to-slate-900 border-2 border-amber-400 rounded-3xl p-6 flex flex-col justify-between rotate-y-180 backface-hidden shadow-[0_0_30px_rgba(245,158,11,0.3)]">
-                <div>
-                  <span class="text-[10px] font-black uppercase tracking-wider text-amber-300">Práctica Vivencial</span>
-                  <p class="text-sm text-slate-200 mt-4 leading-relaxed font-medium">
-                    Decides invertir 2 horas extra estudiando línea por línea el algoritmo generado hasta comprenderlo, negándote a presentar algo que no forma parte de tu propio conocimiento.
-                  </p>
-                </div>
-                <button onclick="event.stopPropagation(); completeLeafCard(2);" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-sm rounded-xl transition shadow-lg transform hover:-translate-y-1">
-                  Integrar Aprendizaje
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Flashcard 3 -->
-          <div class="perspective h-80 cursor-pointer group" onclick="flipCard(this)">
-            <div class="card-inner relative w-full h-full transform-style-3d transition-transform duration-700">
-              <!-- Front -->
-              <div class="absolute inset-0 bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 flex flex-col justify-between backface-hidden shadow-xl group-hover:border-teal-500/50 transition-colors">
-                <div>
-                  <div class="flex justify-between items-start">
-                    <span class="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20">Respeto</span>
-                    <i class="fa-solid fa-handshake-angle text-slate-600 text-xl"></i>
-                  </div>
-                  <h4 class="text-xl font-bold text-white mt-5">La teoría vs. La nota</h4>
-                  <p class="text-sm text-slate-400 mt-3 leading-relaxed">Sientes que la clase de humanidades te quita tiempo valioso y le respondes mal al docente en público.</p>
-                </div>
-                <div class="text-center text-xs font-black uppercase tracking-widest text-teal-500 flex items-center justify-center gap-2 bg-slate-800/50 py-3 rounded-xl">
-                  Revelar Acción <i class="fa-solid fa-arrow-rotate-right"></i>
-                </div>
-              </div>
-              <!-- Back -->
-              <div class="absolute inset-0 bg-gradient-to-br from-emerald-900 to-slate-900 border-2 border-emerald-400 rounded-3xl p-6 flex flex-col justify-between rotate-y-180 backface-hidden shadow-[0_0_30px_rgba(16,185,129,0.3)]">
-                <div>
-                  <span class="text-[10px] font-black uppercase tracking-wider text-emerald-300">Práctica Vivencial</span>
-                  <p class="text-sm text-slate-200 mt-4 leading-relaxed font-medium">
-                    Te detienes, reconoces que tu estrés técnico nubló tu juicio, y pides disculpas frente a la clase. Comprendes que el respeto humano está por encima del estrés académico.
-                  </p>
-                </div>
-                <button onclick="event.stopPropagation(); completeLeafCard(3);" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm rounded-xl transition shadow-lg transform hover:-translate-y-1">
-                  Integrar Aprendizaje
-                </button>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 4: MURO DE RECUERDOS (BITÁCORA) -->
-    <section id="arcade-muro" class="tab-content hidden space-y-6">
-      <div class="glass-card rounded-[2rem] p-6 md:p-10 border-emerald-500/30">
-        
-        <div class="max-w-3xl mx-auto text-center space-y-4 mb-10">
-          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">
-            <i class="fa-solid fa-tree"></i> Bitácora del Core-lab
-          </div>
-          <h3 class="text-3xl font-extrabold text-white">El Muro de los Anillos</h3>
-          <p class="text-slate-300 text-base">
-            Las reflexiones compartidas construyen el tronco de nuestro ecosistema. Escribe tu aprendizaje vivencial y plántalo en la memoria colectiva del equipo.
-          </p>
-        </div>
-
-        <!-- Form for new memory -->
-        <div class="max-w-2xl mx-auto bg-slate-900 p-6 rounded-3xl border border-slate-700 shadow-xl space-y-4 mb-12 relative overflow-hidden">
-          <div class="absolute -left-6 top-6 text-6xl text-slate-800 opacity-50 font-serif">"</div>
-          <textarea id="memory-input" rows="3" class="w-full bg-slate-950/50 border-2 border-slate-800 rounded-2xl p-4 text-base text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition-colors relative z-10" placeholder="Ej: Hoy entendí que ser un gran ingeniero mecánico no sirve si ignoro el impacto ético de mi trabajo..."></textarea>
-          
-          <div class="flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
-            <input type="text" id="memory-author" class="w-full sm:w-auto flex-grow bg-slate-950/50 border-2 border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition-colors" placeholder="Firma (Tu nombre o Equipo)">
-            
-            <button onclick="addMemoryNote()" class="w-full sm:w-auto py-3 px-8 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-sm rounded-xl transition shadow-[0_5px_15px_rgba(16,185,129,0.4)] flex items-center justify-center gap-2">
-              <i class="fa-solid fa-pen-nib"></i> Grabar Anillo
-            </button>
-          </div>
-        </div>
-
-        <!-- Memories Grid Container -->
-        <div id="memories-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          <!-- Initial mock notes -->
-          <div class="p-6 rounded-3xl bg-slate-900 border border-emerald-500/30 space-y-3 relative group hover:border-emerald-500 transition-colors">
-            <div class="absolute inset-0 bg-gradient-to-br from-emerald-900/20 to-transparent pointer-events-none rounded-3xl"></div>
-            <div class="flex items-center justify-between text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
-              <span><i class="fa-solid fa-ring"></i> Anillo #01</span>
-              <span class="text-slate-500">Sesión 1</span>
-            </div>
-            <p class="text-sm text-slate-300 font-medium leading-relaxed italic">"Entendí que la ética no es memorizar leyes abstractas, sino decidir bien con mi equipo en el trabajo bajo presión."</p>
-            <div class="text-xs text-emerald-500 font-bold text-right pt-2">— Equipo Horizonte</div>
-          </div>
-
-          <div class="p-6 rounded-3xl bg-slate-900 border border-amber-500/30 space-y-3 relative group hover:border-amber-500 transition-colors">
-            <div class="absolute inset-0 bg-gradient-to-br from-amber-900/20 to-transparent pointer-events-none rounded-3xl"></div>
-            <div class="flex items-center justify-between text-[10px] text-amber-400 font-bold uppercase tracking-wider">
-              <span><i class="fa-solid fa-ring"></i> Anillo #02</span>
-              <span class="text-slate-500">Sesión 1</span>
-            </div>
-            <p class="text-sm text-slate-300 font-medium leading-relaxed italic">"El reto de 5 minutos me demostró que vivía desconectado por andar corriendo. Escuchar al otro cambia todo."</p>
-            <div class="text-xs text-amber-500 font-bold text-right pt-2">— Alejo G.</div>
-          </div>
-
-          <div class="p-6 rounded-3xl bg-slate-900 border border-teal-500/30 space-y-3 relative group hover:border-teal-500 transition-colors">
-            <div class="absolute inset-0 bg-gradient-to-br from-teal-900/20 to-transparent pointer-events-none rounded-3xl"></div>
-            <div class="flex items-center justify-between text-[10px] text-teal-400 font-bold uppercase tracking-wider">
-              <span><i class="fa-solid fa-ring"></i> Anillo #03</span>
-              <span class="text-slate-500">Sesión 1</span>
-            </div>
-            <p class="text-sm text-slate-300 font-medium leading-relaxed italic">"A veces juzgamos a los que no trabajan en grupo, pero ignoramos los dolores humanos que cargan. Más empatía."</p>
-            <div class="text-xs text-teal-500 font-bold text-right pt-2">— Maria V.</div>
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-  </main>
-
-  <!-- FOOTER -->
-  <footer class="border-t border-slate-800 bg-slate-950 py-8 text-center relative z-10">
-    <div class="max-w-7xl mx-auto px-4 space-y-3">
-      <div class="w-10 h-10 mx-auto bg-slate-900 rounded-full flex items-center justify-center border border-slate-800 text-emerald-500 mb-4">
-        <i class="fa-solid fa-tree"></i>
-      </div>
-      <p class="font-bold text-slate-300 text-sm tracking-wide">Proyecto Core • Ecosistema de Innovación Humana</p>
-      <p class="text-xs text-slate-500 max-w-2xl mx-auto leading-relaxed">
-        Desarrollado por <strong>Equipo Horizonte</strong>: Maria Victoria Perez, Alejandro Guerrero, Laura Carreño, Sofia Quecan, Sofia Tenjo. <br/>
-        Basado en los lineamientos del Laboratorio Core 5 y la obra <em>La memoria del árbol</em>.
-      </p>
+  <div class="start-grid">
+    <div class="paper quote-paper">
+      <span class="script">Antes de empezar…</span>
+      <p>En <em>La memoria del árbol</em>, de Tina Vallès, Jan tiene diez años cuando sus abuelos, Joan y Caterina, dejan su pueblo, Vilaverd, para vivir con él en Barcelona. Pronto descubre por qué: el abuelo Joan está perdiendo la memoria, y Jan decide guardar los recuerdos que a él se le escapan.</p>
+      <p class="mt2">A veces, en Core 5, también olvidamos lo que vivimos en Core 1. <strong>Hoy vas a recuperarlo con Jan</strong>, recorriendo el Árbol de la Vida que construimos en clase: raíces, tronco, ramas, hojas y frutos.</p>
     </div>
-  </footer>
 
-  <!-- SCRIPT & INTERACTIVE LOGIC -->
-  <script>
-    // Global State
-    let completedRings = 3; // Empezamos con 3 de mock
-    const totalRingsRequired = 10;
-    let timerInterval;
+    <div class="card pad">
+      <h3 style="font-size:1.4rem">Planta tu árbol</h3>
+      <p class="muted small mt1">Escriban el nombre del equipo para que aparezca en su certificado.</p>
+      <div class="mt3">
+        <label class="field"><span>Nombre del equipo o jugador</span><input id="in-team" class="input" maxlength="40" placeholder="Ej.: Los Sauces de Core 5"></label>
+        <label class="field"><span>Integrantes (opcional)</span><input id="in-players" class="input" maxlength="120" placeholder="Ej.: Ana, Juan, Sofía"></label>
+      </div>
+      <button class="btn btn-em btn-block mt1" onclick="startGame()"><i class="fa-solid fa-seedling"></i> Empezar (15 min)</button>
+      <div id="continue-box" class="mt2" hidden>
+        <button class="btn btn-amber btn-block" onclick="continueGame()"><i class="fa-solid fa-play"></i> <span id="continue-label">Continuar partida</span></button>
+      </div>
+      <div class="row mt3" style="justify-content:center">
+        <button class="btn btn-ghost btn-sm" onclick="openModal('m-guia')"><i class="fa-solid fa-circle-question"></i> Cómo se juega</button>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('m-libro')"><i class="fa-solid fa-book-open"></i> El libro</button>
+      </div>
+    </div>
+  </div>
+</section>
 
-    // Dilemas Data (Expanded for Core-Lab)
-    const dilemmas = [
-      {
-        title: "La Ética vs. El Cliente Urgente",
-        desc: "Tu cliente exige entregar el software hoy. Sabes que falta un módulo de seguridad crítico que podría fallar en unos meses y comprometer datos.",
-        options: [
-          "Entregar a tiempo, cobrar y callar el fallo técnico.",
-          "Explicar con total honestidad el riesgo y asumir la posible multa por retraso.",
-          "Entregar y responsabilizar a un subalterno si falla después."
-        ]
-      },
-      {
-        title: "El Compañero en Crisis",
-        desc: "Un compañero no aportó nada a la entrega final porque confesó estar en una crisis depresiva profunda severa.",
-        options: [
-          "Eliminar su nombre del trabajo, 'el que no trabaja no gana'.",
-          "Incluirlo, pero acercarse a hablar y guiarlo a apoyo universitario.",
-          "Hacer su parte quejándose a sus espaldas con el resto del salón."
-        ]
-      },
-      {
-        title: "El Atajo de la IA",
-        desc: "Generaste todo tu informe final con IA sin leerlo. Tiene una narrativa perfecta, pero no entiendes el concepto humanista de fondo.",
-        options: [
-          "Entregarlo y esperar sacar un 5.0 rápido.",
-          "Usarlo solo como esquema y reescribir con tu propia reflexión humana.",
-          "Dejar que la IA hasta te haga el guion de presentación."
-        ]
-      },
-      {
-        title: "El Plagio de Innovación",
-        desc: "Ves una idea genial de diseño mecánico en un foro antiguo y tienes la oportunidad de presentarla como 100% tuya ante el jurado.",
-        options: [
-          "Apropiarse del diseño; total, el foro es anónimo.",
-          "Inspirarse profundamente pero citar la fuente original con transparencia.",
-          "Cambiarle el color al diseño y decir que es tuyo."
-        ]
-      },
-      {
-        title: "La Materia de 'Relleno'",
-        desc: "Estás estresado por un proyecto técnico. En la clase de humanidades te piden debatir sobre dignidad humana, sientes que pierdes el tiempo.",
-        options: [
-          "Ignorar al profesor y codificar debajo del pupitre.",
-          "Participar e intentar conectar la 'dignidad' con los usuarios de tu proyecto técnico.",
-          "Quejarte en voz alta diciendo que eso no sirve para la carrera."
-        ]
-      },
-      {
-        title: "El Líder Agotado",
-        desc: "Eres el líder del equipo. Llevan 3 días durmiendo 2 horas. Un miembro comete un error grave por cansancio.",
-        options: [
-          "Gritarle frente a todos por arruinar el progreso.",
-          "Frenar el trabajo 1 hora, priorizar el estado mental del equipo y luego arreglar el fallo.",
-          "Sacarlo del equipo y hacerlo tú mismo sin dormir."
-        ]
-      }
-    ];
+<!-- ================= PRÓLOGO ================= -->
+<section class="screen" id="s-prologue">
+  <div class="story">
+    <div class="paper story-page" id="story-page"></div>
+    <div class="story-nav">
+      <button class="btn btn-ghost" id="story-prev" onclick="storyStep(-1)"><i class="fa-solid fa-arrow-left"></i> Atrás</button>
+      <div class="dots" id="story-dots"></div>
+      <button class="btn btn-amber" id="story-next" onclick="storyStep(1)">Siguiente <i class="fa-solid fa-arrow-right"></i></button>
+    </div>
+  </div>
+</section>
 
-    let currentDilemma = null;
+<!-- ================= MAPA DEL ÁRBOL ================= -->
+<section class="screen" id="s-hub">
+  <div class="hub">
+    <div class="card pad" style="padding-bottom:18px">
+      <div class="center"><span class="chip chip-em"><i class="fa-solid fa-tree"></i> El Árbol de la Vida de tu equipo</span></div>
+      <div class="tree-box mt2">
+        <svg class="tree-svg" viewBox="0 0 400 440" aria-hidden="true">
+          <defs>
+            <linearGradient id="trunkG" x1="0" x2="1"><stop offset="0" stop-color="#3d281a"/><stop offset=".5" stop-color="#7a5232"/><stop offset="1" stop-color="#36231a"/></linearGradient>
+            <radialGradient id="glowG"><stop offset="0" stop-color="#34d399" stop-opacity=".32"/><stop offset="1" stop-color="#34d399" stop-opacity="0"/></radialGradient>
+          </defs>
+          <circle cx="200" cy="150" r="175" fill="url(#glowG)" id="tree-glow" opacity=".3"/>
+          <ellipse cx="200" cy="372" rx="165" ry="16" fill="#0d2a1f"/>
+          <text x="40" y="378" fill="#3f6b58" font-size="11" font-family="Outfit" font-weight="700" letter-spacing="2">TIERRA</text>
+          <g stroke="#b7791f" stroke-width="5" fill="none" stroke-linecap="round" opacity=".85">
+            <path d="M196 368 C 180 390, 150 400, 118 420"/><path d="M204 368 C 220 392, 250 402, 286 418"/>
+            <path d="M200 370 C 200 395, 196 412, 200 434"/><path d="M190 368 C 170 378, 140 378, 106 392"/>
+            <path d="M210 368 C 232 378, 262 380, 296 392"/>
+          </g>
+          <path d="M176 374 C 184 320, 186 270, 188 205 L 212 205 C 214 270, 216 320, 224 374 Z" fill="url(#trunkG)"/>
+          <g stroke="#3d281a" stroke-width="1.5" fill="none" opacity=".6"><path d="M196 360 C 194 320, 196 280, 197 230"/><path d="M206 350 C 207 310, 205 270, 204 240"/></g>
+          <g stroke="#6b4628" stroke-width="9" fill="none" stroke-linecap="round">
+            <path d="M196 245 C 170 222, 140 200, 108 168"/><path d="M204 232 C 230 210, 262 196, 294 166"/><path d="M200 215 C 198 180, 200 150, 200 108"/>
+          </g>
+          <g id="canopy"></g>
+          <g id="fruits"></g>
+        </svg>
+        <button class="hot" style="left:50%;top:9%" data-st="hojas"><span class="b" style="background:#0f766e"><i class="fa-solid fa-leaf"></i></span><span class="l">Hojas · Autoestima</span></button>
+        <button class="hot" style="left:20%;top:37%" data-st="ramas"><span class="b" style="background:#0369a1"><i class="fa-solid fa-code-branch"></i></span><span class="l">Ramas · Libertad</span></button>
+        <button class="hot" style="left:81%;top:37%" data-go="frutos"><span class="b" style="background:#6d28d9"><i class="fa-solid fa-apple-whole"></i></span><span class="l">Frutos · Lo que me llevo</span></button>
+        <button class="hot" style="left:50%;top:66%" data-st="tronco"><span class="b" style="background:#047857"><i class="fa-solid fa-gem"></i></span><span class="l">Tronco · Identidad</span></button>
+        <button class="hot" style="left:50%;top:92%" data-st="raices"><span class="b" style="background:#b45309"><i class="fa-solid fa-seedling"></i></span><span class="l">Raíces · La persona</span></button>
+      </div>
+    </div>
 
-    // Wheel Canvas Drawing
-    const canvas = document.getElementById('wheelCanvas');
-    const ctx = canvas.getContext('2d');
-    const colors = ['#0f766e', '#b45309', '#0369a1', '#6d28d9', '#1d4ed8', '#b91c1c'];
-    let startAngle = 0;
-    const arc = Math.PI / (dilemmas.length / 2);
+    <div style="display:grid;gap:18px">
+      <div class="card pad">
+        <h3 style="font-size:1.55rem" id="hub-hello">Hola, equipo</h3>
+        <p class="muted small mt1">En Core 1 dibujamos nuestro Árbol de la Vida. Hoy lo recorren con Jan: cada estación revive un tema y suma un anillo.</p>
+        <div class="mission mt2" id="hub-mission"></div>
+        <div class="zcards mt2" id="hub-zones"></div>
+      </div>
+    </div>
+  </div>
+</section>
 
-    function drawWheel() {
-      for (let i = 0; i < dilemmas.length; i++) {
-        const angle = startAngle + i * arc;
-        
-        // Draw slice
-        ctx.fillStyle = colors[i % colors.length];
-        ctx.beginPath();
-        ctx.moveTo(190, 190);
-        ctx.arc(190, 190, 180, angle, angle + arc, false);
-        ctx.lineTo(190, 190);
-        ctx.fill();
-        
-        // Border
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = '#0f172a';
-        ctx.stroke();
+<!-- ================= ESTACIÓN (genérica) ================= -->
+<section class="screen" id="s-station">
+  <div class="st-head" id="st-head"></div>
+  <div class="st-body" id="st-body"></div>
+</section>
 
-        // Text
-        ctx.save();
-        ctx.fillStyle = '#f8fafc';
-        ctx.translate(190 + Math.cos(angle + arc / 2) * 110, 190 + Math.sin(angle + arc / 2) * 110);
-        ctx.rotate(angle + arc / 2 + Math.PI / 2);
-        ctx.font = 'bold 15px Plus Jakarta Sans';
-        ctx.textAlign = 'center';
-        ctx.fillText(`Caso 0${i + 1}`, 0, 0);
-        ctx.restore();
-      }
-    }
+<!-- ================= FRUTOS ================= -->
+<section class="screen" id="s-frutos">
+  <div class="st-head">
+    <span class="chip chip-violet"><i class="fa-solid fa-apple-whole"></i> Estación 5 · Frutos · ≈ 2 min</span>
+    <h2>Lo que me llevo</h2>
+    <p class="topic">Relaciones cercanas y proyecto de vida: los regalos que recibimos y el primer paso que damos</p>
+  </div>
+  <div class="st-body">
+    <div class="intro-grid">
+      <div class="paper book-card">
+        <div class="lab">Escena del libro</div>
+        <div class="script">Recordar es cuidar</div>
+        <p>Del abuelo Joan, Jan recibe historias, palabras y tiempo. A cambio, Jan le devuelve compañía y memoria: guarda lo que el abuelo ya no puede guardar. En el Árbol de la Vida, eso son los <strong>frutos</strong>: los regalos que otros nos dieron.</p>
+      </div>
+      <div>
+        <div class="info"><b style="color:var(--violet)"><i class="fa-solid fa-people-roof"></i> Tema de Core 1</b><p>La familia es una «comunidad de generaciones» que transmite una memoria y unos valores (J. Escrivá). «Ningún hombre se ha dado el ser a sí mismo»: todo lo que somos lo hemos recibido, en parte, de otros.</p></div>
+        <div class="info"><b style="color:var(--amber)"><i class="fa-solid fa-magnifying-glass"></i> Autoconocimiento</b><p>Reconocer lo que he recibido me ayuda a saber quién soy. Decidir qué haré con ello es mi proyecto de vida.</p></div>
+      </div>
+    </div>
 
-    drawWheel();
+    <div class="note-form mt3">
+      <label class="field"><span>1. Un regalo que me dejó Core 1 (toca uno o escribe el tuyo)</span></label>
+      <div class="prompts" id="gift-prompts"></div>
+      <textarea id="note-text" class="input" maxlength="220" placeholder="Ej.: Aprendí que no valgo por mis notas, sino por ser persona."></textarea>
+      <label class="field mt2"><span>2. Mi primer paso (cada meta empieza con un paso)</span>
+        <input id="note-step" class="input" maxlength="120" placeholder="Ej.: Esta semana voy a escuchar de verdad a alguien de mi familia."></label>
+      <div class="row">
+        <input id="note-author" class="input" style="flex:1;min-width:180px" maxlength="40" placeholder="Firma (tu nombre o el del equipo)">
+        <button class="btn btn-violet" onclick="addNote()"><i class="fa-solid fa-pen-nib"></i> Colgar mi fruto en el árbol</button>
+      </div>
+    </div>
+    <h4 class="center" style="margin-bottom:14px">Muro de frutos de la Feria Core</h4>
+    <div class="notes" id="notes"></div>
+  </div>
+</section>
 
-    // 5 Minute Timer Logic
-    function startTimer() {
-      clearInterval(timerInterval);
-      const timerWidget = document.getElementById('timer-widget');
-      const timeDisplay = document.getElementById('time-display');
-      timerWidget.classList.remove('hidden');
-      timerWidget.classList.remove('timer-urgent');
-      
-      let timeLeft = 300; // 5 minutes in seconds
-
-      timerInterval = setInterval(() => {
-        timeLeft--;
-        const minutes = Math.floor(timeLeft / 60);
-        const seconds = timeLeft % 60;
-        timeDisplay.innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        
-        if(timeLeft <= 60) {
-          timerWidget.classList.add('timer-urgent');
-        }
-
-        if (timeLeft <= 0) {
-          clearInterval(timerInterval);
-          timeDisplay.innerText = "00:00";
-          alert("¡Se acabó el tiempo del Reto! Deben tomar una decisión ahora mismo.");
-        }
-      }, 1000);
-    }
-
-    function stopTimer() {
-      clearInterval(timerInterval);
-      document.getElementById('timer-widget').classList.add('hidden');
-    }
-
-    // Spin Wheel Logic
-    function spinWheel() {
-      const btn = document.getElementById('spin-btn');
-      btn.disabled = true;
-      stopTimer();
-      
-      const degrees = Math.floor(3000 + Math.random() * 3000);
-      let currentRotation = 0;
-      
-      const spinInterval = setInterval(() => {
-        currentRotation += 20; // velocidad de giro
-        startAngle = (currentRotation * Math.PI) / 180;
-        drawWheel();
-
-        if (currentRotation >= degrees) {
-          clearInterval(spinInterval);
-          btn.disabled = false;
-          
-          // Calculate Selected Index mathematically
-          const normalizedRotation = currentRotation % 360;
-          // Canvas rotation puts 0 degrees at 3 o'clock. Arrow is at 12 o'clock (270 degrees).
-          let hitAngle = (270 - normalizedRotation + 360) % 360;
-          const sliceAngle = 360 / dilemmas.length;
-          let selectedIndex = Math.floor(hitAngle / sliceAngle);
-          
-          showDilemma(dilemmas[selectedIndex]);
-          startTimer(); // Inicia el reto de 5 min
-        }
-      }, 15);
-    }
-
-    function showDilemma(dilemma) {
-      currentDilemma = dilemma;
-      document.getElementById('dilemma-title').innerText = dilemma.title;
-      document.getElementById('dilemma-desc').innerHTML = `El equipo tiene <strong>5 minutos</strong> en el reloj para debatir esta situación:<br/><br/><span class="italic text-amber-200">"${dilemma.desc}"</span>`;
-
-      const optsContainer = document.getElementById('dilemma-options');
-      optsContainer.innerHTML = dilemma.options.map((opt, i) => `
-        <label class="flex items-start gap-4 p-4 rounded-xl border border-slate-700 bg-slate-900/80 cursor-pointer hover:border-emerald-500 hover:bg-slate-800 transition-all group shadow-sm">
-          <div class="pt-1">
-            <input type="radio" name="d-option" value="${i}" class="w-4 h-4 text-emerald-500 bg-slate-900 border-slate-600 focus:ring-emerald-500 focus:ring-2">
-          </div>
-          <span class="text-sm text-slate-200 font-medium group-hover:text-white">${opt}</span>
-        </label>
-      `).join('');
-
-      optsContainer.classList.remove('hidden');
-      document.getElementById('dilemma-action').classList.remove('hidden');
-    }
-
-    function resolveDilemma() {
-      const selected = document.querySelector('input[name="d-option"]:checked');
-      if (!selected) {
-        alert('Por favor, como equipo seleccionen una postura ética definitiva antes de continuar.');
-        return;
-      }
-      stopTimer();
-      incrementRings();
-      confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ['#10b981', '#f59e0b', '#06b6d4'] });
-      
-      // Esconder opciones
-      document.getElementById('dilemma-options').classList.add('hidden');
-      document.getElementById('dilemma-action').classList.add('hidden');
-      document.getElementById('dilemma-title').innerText = "¡Reto Ético Superado!";
-      document.getElementById('dilemma-desc').innerText = "Han tomado una decisión. Su debate añade un nuevo anillo de sabiduría al árbol de la clase. Giren de nuevo o avancen a la siguiente sección.";
-    }
-
-    // TAB SWITCHING LOGIC
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-      document.getElementById(tabId).classList.remove('hidden');
-
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('bg-gradient-to-r', 'from-emerald-600', 'to-teal-600', 'text-white', 'shadow-lg', 'border-emerald-500/50');
-        btn.classList.add('text-slate-400', 'border-transparent');
-      });
-
-      const activeBtnMap = {
-        'arcade-tronco': 'tab-tronco',
-        'arcade-raices': 'tab-raices',
-        'arcade-hojas': 'tab-hojas',
-        'arcade-muro': 'tab-muro'
-      };
-
-      const activeBtn = document.getElementById(activeBtnMap[tabId]);
-      activeBtn.classList.add('bg-gradient-to-r', 'from-emerald-600', 'to-teal-600', 'text-white', 'shadow-lg', 'border-emerald-500/50');
-      activeBtn.classList.remove('text-slate-400', 'border-transparent');
-    }
-
-    // QUIZ LOGIC (TAB 2)
-    const quizAnswers = [null, null, null];
-
-    function setQuizAnswer(qIdx, val) {
-      quizAnswers[qIdx] = val;
-      const btns = document.querySelectorAll(`.q${qIdx}`);
-      btns.forEach(b => b.classList.remove('bg-amber-600', 'border-amber-500', 'text-white'));
-      event.target.classList.add('bg-amber-600', 'border-amber-500', 'text-white');
-    }
-
-    function calculateResilienceCard() {
-      if (quizAnswers.includes(null)) {
-        alert('Responde las 3 preguntas con honestidad para evaluar tus raíces.');
-        return;
-      }
-      
-      const score = quizAnswers.reduce((a, b) => a + b, 0);
-      const icon = document.getElementById('resilience-icon');
-      const title = document.getElementById('resilience-title');
-      const desc = document.getElementById('resilience-text');
-      const challenge = document.getElementById('resilience-challenge');
-      const badge = document.getElementById('resilience-badge');
-
-      if(score <= 4) {
-        icon.className = "fa-solid fa-tree text-emerald-400";
-        badge.innerText = "Raíces Fuertes";
-        title.innerText = "Equilibrio Sostenido";
-        desc.innerText = "Tus raíces están absorbiendo bien los nutrientes. Manejas el estrés adecuadamente.";
-        challenge.innerText = "Durante 5 minutos, busca a un compañero que veas estresado y simplemente escúchalo sin intentar 'arreglar' su problema.";
-      } else if (score <= 7) {
-        icon.className = "fa-solid fa-wind text-amber-400";
-        badge.innerText = "Raíces en Tensión";
-        title.innerText = "Alerta de Viento Fuerte";
-        desc.innerText = "Estás sacrificando tiempo humano por rendimiento técnico. El árbol empieza a tambalearse.";
-        challenge.innerText = "Cierra la laptop 5 minutos. Haz 10 respiraciones profundas y anota 3 cosas que agradeces fuera de la universidad.";
-      } else {
-        icon.className = "fa-solid fa-fire text-rose-500";
-        badge.innerText = "Raíces Secas";
-        badge.classList.replace('text-amber-400', 'text-rose-400');
-        title.innerText = "Riesgo de Burnout Inminente";
-        desc.innerText = "Peligro: Has desconectado tu parte humana para rendir como máquina. Necesitas agua urgente.";
-        challenge.innerText = "Obligatorio: Deja todo por 5 minutos exactos. Sal del salón, mira el cielo o un árbol real, y no pienses absolutamente en nada académico.";
-      }
-
-      document.getElementById('stress-quiz').classList.add('hidden');
-      document.getElementById('resilience-result').classList.remove('hidden');
-    }
-
-    function resetQuiz() {
-      document.getElementById('stress-quiz').classList.remove('hidden');
-      document.getElementById('resilience-result').classList.add('hidden');
-      quizAnswers.fill(null);
-      document.querySelectorAll('.q-btn').forEach(b => b.classList.remove('bg-amber-600', 'border-amber-500', 'text-white'));
-    }
-
-    function completeRootsRing() {
-      incrementRings();
-      confetti({ particleCount: 80, spread: 60, colors: ['#f59e0b', '#fbbf24'] });
-      resetQuiz();
-      alert('¡Excelente! Cuidar de ti mismo es el primer acto ético. Sumaste un anillo.');
-    }
-
-    // FLASHCARD FLIP (TAB 3)
-    function flipCard(cardEl) {
-      const inner = cardEl.querySelector('.card-inner');
-      inner.classList.toggle('rotate-y-180');
-    }
-
-    function completeLeafCard(num) {
-      incrementRings();
-      confetti({ particleCount: 60, spread: 50, colors: ['#14b8a6', '#0ea5e9'] });
-      alert(`¡Valor de Empatía asimilado! Las hojas de nuestro árbol se fortalecen.`);
-    }
-
-    // MEMORY WALL LOGIC (TAB 4)
-    function addMemoryNote() {
-      const text = document.getElementById('memory-input').value.trim();
-      const author = document.getElementById('memory-author').value.trim() || 'Ingeniero(a) Core';
-
-      if (!text) {
-        alert('Por favor escribe tu reflexión para que quede grabada en la memoria.');
-        return;
-      }
-
-      const grid = document.getElementById('memories-grid');
-      const noteHtml = `
-        <div class="p-6 rounded-3xl bg-slate-900 border border-emerald-400/50 space-y-3 relative shadow-[0_0_15px_rgba(16,185,129,0.2)] animate-pulse-once">
-          <div class="absolute inset-0 bg-gradient-to-br from-emerald-900/30 to-transparent pointer-events-none rounded-3xl"></div>
-          <div class="flex items-center justify-between text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
-            <span><i class="fa-solid fa-ring"></i> Anillo Nuevo</span>
-            <span class="text-white bg-emerald-500/20 px-2 py-1 rounded">Hoy</span>
-          </div>
-          <p class="text-sm text-slate-100 font-medium leading-relaxed italic">"${text}"</p>
-          <div class="text-xs text-emerald-400 font-black text-right pt-2">— ${author}</div>
+<!-- ================= FINAL ================= -->
+<section class="screen" id="s-final">
+  <div class="card pad">
+    <div class="final-hero">
+      <span class="chip chip-amber"><i class="fa-solid fa-award"></i> Árbol de la Vida completo</span>
+      <span class="script mt2">Guardianes de la memoria</span>
+      <p class="muted" id="final-team" style="font-size:1.05rem"></p>
+    </div>
+    <div class="final-grid">
+      <div>
+        <div class="center"><div id="final-wood" style="display:inline-block"></div></div>
+        <div class="stat-row">
+          <div class="stat"><b id="f-rings">6/6</b><span>Anillos</span></div>
+          <div class="stat"><b id="f-mem">0/12</b><span>Recuerdos</span></div>
+          <div class="stat"><b id="f-time">0:00</b><span>Tiempo</span></div>
         </div>
-      `;
+        <div class="paper mt3" style="padding:24px 26px">
+          <p class="serif" style="font-size:1.2rem;line-height:1.55">Jan no pudo impedir que su abuelo olvidara, pero sí pudo <strong>guardar sus recuerdos y llevarlos consigo</strong>. Así funciona Core: lo que viviste en Core 1 no se pierde si lo conviertes en decisiones, en cuidado y en relaciones.</p>
+        </div>
+      </div>
+      <div>
+        <h4>Los temas de Core 1 que recordaste están conectados</h4>
+        <div class="chain" id="final-chain"></div>
+        <div class="row mt3">
+          <button class="btn btn-em" onclick="downloadCert()"><i class="fa-solid fa-download"></i> Descargar certificado</button>
+          <button class="btn btn-ghost" onclick="openModal('m-equipo')"><i class="fa-solid fa-people-group"></i> Cómo crecimos nosotros</button>
+          <button class="btn btn-ghost" onclick="go('hub')"><i class="fa-solid fa-tree"></i> Ver mi árbol</button>
+        </div>
+        <div class="mission mt3"><b>Llévatelo a Core 5</b><p class="mt1 small" style="color:#fce7b3">¿Qué recuerdo de Core 1 quieres que no se te olvide nunca? Compártelo con tu equipo antes de salir del stand.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
 
-      grid.insertAdjacentHTML('afterbegin', noteHtml);
-      document.getElementById('memory-input').value = '';
-      document.getElementById('memory-author').value = '';
+<footer>
+  <div class="wrap">
+    <p><strong>Core-lab · Ecosistema de Innovación Humana y Práctica Vivencial</strong> — Proyecto final de Core 1: Persona y Autoconocimiento</p>
+    <p>Equipo <strong>Horizonte</strong>: María Victoria Pérez · Alejandro Guerrero · Laura Carreño · Sofía Quecan · Sofía Tenjo</p>
+    <p>Recurso literario: <em>La memoria del árbol</em>, de Tina Vallès. Las escenas se presentan resumidas con fines educativos. Contenidos basados en las clases y lecturas de Core 1.</p>
+  </div>
+</footer>
 
-      incrementRings();
-      confetti({ particleCount: 150, spread: 100, origin: { y: 0.8 } });
-    }
+<!-- ================= MODAL: EL LIBRO ================= -->
+<div class="modal" id="m-libro" hidden onclick="if(event.target===this)closeModal('m-libro')">
+  <div class="modal-box">
+    <button class="icon-btn modal-x" onclick="closeModal('m-libro')"><i class="fa-solid fa-xmark"></i></button>
+    <span class="chip chip-amber"><i class="fa-solid fa-book-open"></i> Nuestro recurso literario</span>
+    <h3 class="mt2"><em>La memoria del árbol</em> · Tina Vallès</h3>
+    <p class="muted" style="line-height:1.6">Novela narrada por Jan, un niño de diez años. Cuando sus abuelos se mudan del pueblo de Vilaverd a su piso de Barcelona, Jan descubre que el abuelo Joan está perdiendo la memoria. A través de paseos, historias y silencios, nieto y abuelo construyen una complicidad para que los recuerdos no se pierdan.</p>
+    <div class="echo mt2"><div class="ico"><i class="fa-solid fa-lightbulb"></i></div><div><b>Idea central para Core-lab</b><p>Los árboles guardan su historia en los anillos del tronco; las personas la guardamos en la memoria… y en los demás. Por eso cada estación de Core-lab suma un anillo.</p></div></div>
+    <div class="chars">
+      <div class="paper char"><div class="role">El narrador · 10 años</div><h4>Jan</h4><p>Observa los detalles y los silencios de los adultos. Al cuidar a su abuelo sale de sí mismo y descubre quién quiere ser.</p><p class="small" style="font-family:'Plus Jakarta Sans';margin-top:8px"><b>Enseña sobre autoconocimiento:</b> uno se conoce mejor cuando se da a otro.</p><div class="tags"><span>Madurez</span><span>Autoestima</span><span>Libertad interior</span></div></div>
+      <div class="paper char"><div class="role">El abuelo · relojero de Vilaverd</div><h4>Joan</h4><p>Fue el relojero de su pueblo; ahora el tiempo se le desordena por dentro. Aunque olvida, sigue siendo él.</p><p class="small" style="font-family:'Plus Jakarta Sans';margin-top:8px"><b>Enseña sobre autoconocimiento:</b> somos más que lo que recordamos o producimos.</p><div class="tags"><span>Persona</span><span>Dignidad</span><span>Identidad y memoria</span></div></div>
+      <div class="paper char"><div class="role">La abuela</div><h4>Caterina</h4><p>Cuida al abuelo cada día y sostiene la casa con buen humor, aunque por dentro esté cansada.</p><p class="small" style="font-family:'Plus Jakarta Sans';margin-top:8px"><b>Enseña sobre autoconocimiento:</b> reconocer la propia vulnerabilidad y dejarse ayudar.</p><div class="tags"><span>Vulnerabilidad y cuidado</span><span>Familia</span></div></div>
+      <div class="paper char"><div class="role">El origen</div><h4>Vilaverd y el sauce</h4><p>El pueblo de los abuelos y la historia del sauce que Jan quiere escuchar: las raíces de la familia.</p><p class="small" style="font-family:'Plus Jakarta Sans';margin-top:8px"><b>Enseña sobre autoconocimiento:</b> saber de dónde vengo me ayuda a saber quién soy.</p><div class="tags"><span>Filiación</span><span>Memoria de la familia</span></div></div>
+    </div>
+    <h4 class="mt3">¿Dónde aparece el libro en el juego?</h4>
+    <table class="map-table">
+      <tr><th>Momento</th><th>Personaje o idea del libro</th><th>Tema de Core 1</th></tr>
+      <tr><td>Prólogo</td><td>La llegada de los abuelos y el pacto de Jan</td><td>Introducción: «¿Cómo saber lo que nos conviene si no sabemos quiénes somos?» (Platón)</td></tr>
+      <tr><td>Raíces</td><td>¿El abuelo sigue siendo él aunque olvide?</td><td>La persona: qué y quién, dignidad, vulnerabilidad, familia</td></tr>
+      <tr><td>Tronco</td><td>Joan, el relojero, y las piezas de una persona</td><td>Identidad, personalidad, temperamento, carácter y madurez</td></tr>
+      <tr><td>Ramas</td><td>Nadie eligió la enfermedad, pero todos eligen cómo vivirla</td><td>Libertad, felicidad y sentido de vida</td></tr>
+      <tr><td>Hojas</td><td>Jan y Caterina: las personas que nos sostienen</td><td>Autoestima: escalera, competencia y merecimiento, tipos</td></tr>
+      <tr><td>Frutos</td><td>Lo que Jan recibe y devuelve a su abuelo</td><td>Familia como memoria y proyecto de vida</td></tr>
+    </table>
+  </div>
+</div>
 
-    // RINGS METER INCREMENT
-    function incrementRings() {
-      if (completedRings < totalRingsRequired) {
-        completedRings++;
-        document.getElementById('tree-rings-count').innerText = `${completedRings} / ${totalRingsRequired} Anillos`;
-        
-        // Efecto visual en el contador
-        const counter = document.getElementById('tree-rings-count').parentElement.parentElement;
-        counter.classList.add('bg-emerald-800/80');
-        setTimeout(() => counter.classList.remove('bg-emerald-800/80'), 500);
-      }
-    }
-  </script>
+<!-- ================= MODAL: EQUIPO ================= -->
+<div class="modal" id="m-equipo" hidden onclick="if(event.target===this)closeModal('m-equipo')">
+  <div class="modal-box">
+    <button class="icon-btn modal-x" onclick="closeModal('m-equipo')"><i class="fa-solid fa-xmark"></i></button>
+    <span class="chip chip-em"><i class="fa-solid fa-people-group"></i> Equipo Horizonte</span>
+    <h3 class="mt2">Lo que <em>La memoria del árbol</em> nos enseñó como equipo</h3>
+    <p class="muted" style="line-height:1.6">María Victoria Pérez · Alejandro Guerrero · Laura Carreño · Sofía Quecan · Sofía Tenjo. Valores de nuestra alianza: <b>perseverancia, honestidad, respeto, esfuerzo y solidaridad</b>. Lema: <em>«Cada meta empieza con un paso»</em>.</p>
+    <h4 class="mt3">Nuestro propio Árbol de la Vida</h4>
+    <div class="cgrid">
+      <div><b><i class="fa-solid fa-seedling"></i> Raíces</b>Venimos de programas e historias distintas. Empezamos el semestre casi sin conocernos y escribimos una alianza con cinco valores.</div>
+      <div><b><i class="fa-solid fa-gem"></i> Tronco</b>Como Joan con sus relojes, aprendimos a conocer nuestras «piezas»: quién organiza, quién diseña, quién escucha, quién anima.</div>
+      <div><b><i class="fa-solid fa-code-branch"></i> Ramas</b>Nuestro sueño: que los estudiantes de Core 5 vuelvan a sentir que Core 1 habla de su vida.</div>
+      <div><b><i class="fa-solid fa-leaf"></i> Hojas</b>Las personas que nos ayudaron: los estudiantes que respondieron la encuesta, nuestro profesor y nuestras familias.</div>
+      <div><b><i class="fa-solid fa-apple-whole"></i> Frutos</b>Este juego, y algo más importante: aprender a trabajar juntos sin dejar a nadie atrás.</div>
+      <div><b><i class="fa-solid fa-mountain-sun"></i> Tierra</b>La Universidad de La Sabana, donde hoy estudiamos, decidimos y nos equivocamos juntos.</div>
+    </div>
+    <h4 class="mt3">Antes y después</h4>
+    <div class="ba"><div class="b1"><b>Al inicio</b><br>Como muchos encuestados, veíamos Core como una teoría lejana de nuestras carreras.</div><i class="fa-solid fa-arrow-right"></i><div class="b2"><b>Ahora</b><br>Entendimos que Core nos ayuda a decidir, a cuidar y a conocernos: es lo que hacemos todos los días.</div></div>
+    <div class="ba"><div class="b1"><b>Al inicio</b><br>Cada uno trabajaba por su lado y nos costaba ponernos de acuerdo.</div><i class="fa-solid fa-arrow-right"></i><div class="b2"><b>Ahora</b><br>Aprendimos a escuchar antes de decidir y a repartir las tareas según las fortalezas de cada uno.</div></div>
+    <div class="ba"><div class="b1"><b>Al inicio</b><br>Leímos el libro como una tarea más.</div><i class="fa-solid fa-arrow-right"></i><div class="b2"><b>Ahora</b><br>Como Jan, descubrimos que recordar es una forma de cuidar, y que nadie crece solo.</div></div>
+    <div class="echo mt3"><div class="ico"><i class="fa-solid fa-book-open"></i></div><div><b>Nuestra conexión con el libro</b><p>Jan creció cuando dejó de mirar solo hacia sí mismo y empezó a cuidar de su abuelo. A nosotros nos pasó algo parecido: el equipo creció cuando dejamos de pensar en «mi parte» y empezamos a pensar en «nuestro proyecto».</p></div></div>
+  </div>
+</div>
+
+<!-- ================= MODAL: PROYECTO ================= -->
+<div class="modal" id="m-proyecto" hidden onclick="if(event.target===this)closeModal('m-proyecto')">
+  <div class="modal-box">
+    <button class="icon-btn modal-x" onclick="closeModal('m-proyecto')"><i class="fa-solid fa-xmark"></i></button>
+    <span class="chip chip-em"><i class="fa-solid fa-chart-pie"></i> Proyecto Core · Design Thinking</span>
+    <h3 class="mt2">¿Por qué existe Core-lab?</h3>
+    <p class="muted">Meta: aportar a que los estudiantes de <b>Core 5</b> revivan su experiencia de <b>Core 1</b> en la Feria Core.</p>
+    <div class="qblock mt3" style="border-color:rgba(251,113,133,.35)">
+      <h4 style="color:var(--rose)"><i class="fa-solid fa-triangle-exclamation"></i> Problema central (fase Definir)</h4>
+      <p class="mt1" style="line-height:1.6">Hay una desconexión entre lo que se enseña en Core al inicio de la carrera y la vida real de los estudiantes. Por eso pierden el interés, le restan importancia a la formación humana y sufren más el estrés académico.</p>
+    </div>
+    <h4 class="mt3">Fase Empatizar · Encuesta del Equipo Horizonte (n = 10, 2026-2)</h4>
+    <div class="grid2 mt2">
+      <div class="qblock"><h4>¿Qué se piensa de Core?</h4><div class="dbars">
+        <div class="dbar"><span>No sirve para la carrera / quita tiempo</span><div class="tr"><i style="width:60%"></i></div><b>60 %</b></div>
+        <div class="dbar"><span>Materia de relleno</span><div class="tr"><i style="width:40%"></i></div><b>40 %</b></div>
+        <div class="dbar"><span>Contenido aburrido / moralina</span><div class="tr"><i style="width:30%"></i></div><b>30 %</b></div>
+      </div></div>
+      <div class="qblock"><h4>Temas que más se revaloran</h4><div class="dbars">
+        <div class="dbar"><span>Persona, el otro, empatía, dignidad</span><div class="tr"><i style="width:30%"></i></div><b>30 %</b></div>
+        <div class="dbar"><span>Autoestima y autocuidado</span><div class="tr"><i style="width:20%"></i></div><b>20 %</b></div>
+        <div class="dbar"><span>Relaciones familiares</span><div class="tr"><i style="width:10%"></i></div><b>10 %</b></div>
+      </div></div>
+      <div class="qblock"><h4>Aprendizajes que sí aplican</h4><div class="dbars">
+        <div class="dbar"><span>Trabajo en equipo y escucha activa</span><div class="tr"><i style="width:44.4%"></i></div><b>44,4 %</b></div>
+        <div class="dbar"><span>Decisiones éticas y compromiso social</span><div class="tr"><i style="width:22.2%"></i></div><b>22,2 %</b></div>
+        <div class="dbar"><span>No ha aplicado ninguno</span><div class="tr"><i style="width:22.2%"></i></div><b>22,2 %</b></div>
+      </div></div>
+      <div class="qblock"><h4>Lo que piden los estudiantes</h4><div class="dbars">
+        <div class="dbar"><span>Debates sobre casos reales</span><div class="tr"><i style="width:40%"></i></div><b>40 %</b></div>
+        <div class="dbar"><span>Conexión con la profesión</span><div class="tr"><i style="width:20%"></i></div><b>20 %</b></div>
+        <div class="dbar"><span>Recursos dinámicos (historias, videos)</span><div class="tr"><i style="width:10%"></i></div><b>10 %</b></div>
+      </div></div>
+    </div>
+    <h4 class="mt3">Fase Idear y Prototipar · Cómo responde el juego</h4>
+    <table class="map-table">
+      <tr><th>Necesidad detectada</th><th>Respuesta en Core-lab</th></tr>
+      <tr><td>Teoría abstracta (40 %) y lecturas complejas (30 %)</td><td>Cada tema se explica en lenguaje sencillo con escenas de <em>La memoria del árbol</em>.</td></tr>
+      <tr><td>Debates sobre casos reales (40 %)</td><td>Ruleta de dilemas universitarios con debate cronometrado en la estación Ramas.</td></tr>
+      <tr><td>Clases poco participativas</td><td>Todo se juega en equipo: clasificar, ordenar, decidir y escribir.</td></tr>
+      <tr><td>Autoestima y autocuidado (20 %)</td><td>Estación Hojas: escalera de la autoestima y tipos de autoestima.</td></tr>
+      <tr><td>Formato de la Feria Core</td><td>15 minutos, funciona en celular o pantalla, sin instalar nada.</td></tr>
+    </table>
+    <div class="echo mt3"><div class="ico"><i class="fa-solid fa-star"></i></div><div><b>Diferenciador</b><p>No es un repaso de apuntes ni un quiz suelto: es un recorrido por el Árbol de la Vida de Core 1 guiado por los personajes de una novela, donde cada respuesta se conecta con la vida universitaria real.</p></div></div>
+  </div>
+</div>
+
+<!-- ================= MODAL: GUÍA ================= -->
+<div class="modal" id="m-guia" hidden onclick="if(event.target===this)closeModal('m-guia')">
+  <div class="modal-box">
+    <button class="icon-btn modal-x" onclick="closeModal('m-guia')"><i class="fa-solid fa-xmark"></i></button>
+    <span class="chip chip-amber"><i class="fa-solid fa-circle-question"></i> Guía de juego · Feria Core</span>
+    <h3 class="mt2">¿Cómo se juega Core-lab?</h3>
+    <p class="muted" style="line-height:1.6">Tu equipo recorre las cinco partes de su Árbol de la Vida. Cada estación revive un tema de Core 1 con una escena del libro y tres retos rápidos. Al terminarla, el tronco gana un anillo. Cada respuesta acertada recupera un «recuerdo».</p>
+    <ol class="steps">
+      <li><div><b>Prólogo (1 min · 1 anillo):</b> la historia de Jan y el abuelo Joan.</div></li>
+      <li><div><b>Raíces (2,5 min):</b> la persona, la dignidad y la familia.</div></li>
+      <li><div><b>Tronco (2,5 min):</b> identidad, temperamento, carácter y madurez.</div></li>
+      <li><div><b>Ramas (3 min):</b> libertad, felicidad y sentido de vida, con ruleta de dilemas y 60 segundos de debate.</div></li>
+      <li><div><b>Hojas (2,5 min):</b> la escalera y los tipos de autoestima.</div></li>
+      <li><div><b>Frutos (2 min):</b> cada jugador cuelga en el muro un regalo de Core 1 y su primer paso.</div></li>
+      <li><div><b>Cierre (1 min):</b> resultados y certificado descargable.</div></li>
+    </ol>
+    <h4 class="mt3">Para quien atiende el stand</h4>
+    <div class="cgrid">
+      <div><b>Tiempo</b>El reloj de arriba marca los 15 minutos. Si se acaba, lleven al equipo directo a Frutos para cerrar.</div>
+      <div><b>Montaje</b>Proyecten el juego en una pantalla o abran el enlace en un celular por equipo. No necesita instalación.</div>
+      <div><b>Reglas</b>Antes de responder, todos opinan. Se decide por consenso. Equivocarse también enseña: el juego explica cada respuesta.</div>
+    </div>
+    <p class="muted small mt3"><i class="fa-solid fa-floppy-disk"></i> El progreso se guarda en este navegador. Usa <i class="fa-solid fa-rotate-left"></i> para empezar una partida nueva con el siguiente equipo; el muro de frutos se conserva.</p>
+  </div>
+</div>
+
+<!-- ================= DIÁLOGO ================= -->
+<div class="modal" id="m-dialog" hidden onclick="if(event.target===this)closeModal('m-dialog')">
+  <div class="modal-box sm center" id="dialog-body"></div>
+</div>
+
+<script>
+/* =========================================================
+   CORE-LAB · LA MEMORIA DEL ÁRBOL — Equipo Horizonte
+   ========================================================= */
+var LIMIT = 15 * 60;          // 15 minutos
+var TOTAL_RINGS = 6;          // prólogo + 5 estaciones
+var TOTAL_MEM = 12;           // 3 retos x 4 estaciones
+var KEY = 'corelab-memoria-arbol-v6';
+var NOTES_KEY = 'corelab-memoria-arbol-muro';
+var ORDER = ['raices', 'tronco', 'ramas', 'hojas'];
+var ZCOL = { prologo: '#a3e635', raices: '#fbbf24', tronco: '#34d399', ramas: '#7dd3fc', hojas: '#2dd4bf', frutos: '#c4b5fd' };
+
+function $(s) { return document.querySelector(s); }
+function $$(s) { return Array.prototype.slice.call(document.querySelectorAll(s)); }
+function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+function fmt(s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
+
+/* ---------------- CONTENIDO DE LAS ESTACIONES ---------------- */
+var STATIONS = {
+  raices: {
+    n: 1, name: 'Raíces', icon: 'fa-seedling', color: '#fbbf24', chip: 'chip-amber', minutes: '2,5',
+    title: '¿El abuelo sigue siendo él?',
+    topic: 'La persona: qué y quién soy, dignidad, vulnerabilidad y familia',
+    book: { title: 'Cuando el abuelo olvida', text: 'El abuelo Joan empieza a olvidar palabras, rutinas y momentos. Jan se hace una pregunta enorme para un niño de diez años: si el abuelo ya no recuerda lo que fue, ¿sigue siendo el mismo?' },
+    core: 'En la clase «La persona» vimos que cada uno es un <b>qué</b> (lo que compartimos con otros: ser vivo, racional, social) y un <b>quién</b> (lo que solo yo soy: mi nombre, mi historia, mi intimidad). Y que la persona tiene <b>dignidad: no tiene precio</b>.',
+    auto: 'Conocerme empieza por descubrir que soy <b>alguien</b> único, no <b>algo</b> útil. Mi valor no depende de lo que produzco.',
+    eco: 'Jan sigue cuidando al abuelo porque entiende que la enfermedad afecta su memoria, pero no borra quién es. Tus raíces —tu familia, tu historia— también explican quién eres.',
+    rounds: [
+      { type: 'sort', title: '¿Qué o quién? Clasifica lo que sabemos del abuelo Joan.',
+        buckets: ['Qué (común)', 'Quién (único)'],
+        items: [
+          { t: 'Es un ser humano, racional y social.', b: 0 },
+          { t: 'Su cuerpo envejece, como el de todos.', b: 0 },
+          { t: 'Es el abuelo de Jan y el esposo de Caterina.', b: 1 },
+          { t: 'Guarda una historia del sauce de Vilaverd que nadie más ha vivido.', b: 1 }
+        ],
+        fb: 'El «qué» lo compartimos con los demás; el «quién» es irrepetible: sus relaciones y su biografía. Como dice J. M. Torralba, «somos la historia que escribimos».',
+        src: 'Clase 2 · La persona (Yepes y Aranguren; Torralba)' },
+      { type: 'choice', title: 'El abuelo ya no puede trabajar ni recordar bien. Según Core 1, ¿qué pasa con su dignidad?',
+        options: [
+          { t: 'Disminuye, porque ya no es útil para nadie.', ok: false },
+          { t: 'Se mantiene intacta: no depende de lo que hacemos o recordamos, sino de ser persona.', ok: true },
+          { t: 'Depende de lo que opine su familia de él.', ok: false }
+        ],
+        fb: 'La dignidad es una propiedad de la persona, basada en su ser y no en su rendimiento: «no tienes precio». Aplícalo a ti: tampoco vales por tu promedio.',
+        src: 'Clase 2 · Propiedades de la persona: dignidad, igualdad, libertad' },
+      { type: 'choice', title: 'Los abuelos dejan Vilaverd y la familia los recibe en su piso de Barcelona. ¿Qué nos enseña esto sobre la persona?',
+        options: [
+          { t: 'Que la persona se basta a sí misma y no necesita a nadie.', ok: false },
+          { t: 'Que somos vulnerables y por eso podemos cuidar y ser cuidados: coexistimos con otros.', ok: true },
+          { t: 'Que la familia es solo una unidad económica.', ok: false }
+        ],
+        fb: '«La vulnerabilidad permite cuidar y ser cuidado (dar y recibir)». Y la familia es una comunidad de generaciones: «comprende no sólo a padres e hijos, sino también a los abuelos y a los antepasados» (J. Escrivá). Como dice L. Polo, «soy radicalmente hijo».',
+        src: 'Clase 2 · Vulnerabilidad y filiación · Lectura de J. Escrivá' }
+    ]
+  },
+  tronco: {
+    n: 2, name: 'Tronco', icon: 'fa-gem', color: '#34d399', chip: 'chip-em', minutes: '2,5',
+    title: 'Las piezas del relojero',
+    topic: 'Identidad, personalidad, temperamento, carácter y madurez',
+    book: { title: 'El relojero de Vilaverd', text: 'Joan fue el relojero de su pueblo: conocía cada pieza de un reloj por dentro. Ahora es Jan quien intenta entender las piezas de su abuelo… y, sin darse cuenta, también las suyas.' },
+    core: 'Identidad, autoestima y personalidad forman la estructura psicológica de la persona. Según Enrique Rojas, la personalidad tiene tres raíces: <b>herencia, ambiente y experiencia</b>. Une el <b>temperamento</b> (heredado) y el <b>carácter</b> (se forja con hábitos y virtudes).',
+    auto: 'No elijo mi temperamento, pero sí soy responsable de mi carácter. Responder «¿quién soy?» es tarea de toda la vida.',
+    eco: 'Cuando la memoria del abuelo falla, su familia le ayuda a seguir sabiendo quién es. Nuestra identidad también se sostiene en los demás.',
+    rounds: [
+      { type: 'sort', title: '¿Temperamento o carácter? Clasifica cada rasgo.',
+        buckets: ['Temperamento', 'Carácter'],
+        items: [
+          { t: 'Reaccionar rápido y con intensidad desde que eras niño.', b: 0 },
+          { t: 'Ser introvertido por naturaleza.', b: 0 },
+          { t: 'Escuchar con paciencia al abuelo aunque repita sus historias.', b: 1 },
+          { t: 'Llegar puntual porque lo decidiste y lo repetiste cada día.', b: 1 }
+        ],
+        fb: '«Carácter es modular el temperamento con las virtudes». El temperamento viene dado; el carácter se aprende y, por eso, somos responsables de él. Rojas: aceptar lo no cambiable y luchar por cambiar lo cambiable.',
+        src: 'Clase 9 · Personalidad · E. Rojas, ¿Quién eres?' },
+      { type: 'choice', title: 'J. M. Burgos escribe: «Si no tuviésemos memoria no sabríamos quiénes somos, ni de dónde procedemos». Entonces, si el abuelo pierde la memoria, ¿qué sostiene su identidad?',
+        options: [
+          { t: 'Nada: sin memoria ya no existe la identidad.', ok: false },
+          { t: 'También los demás: su familia lo reconoce y le recuerda quién es, como hace Jan.', ok: true },
+          { t: 'Solo su nombre en la cédula.', ok: false }
+        ],
+        fb: 'La memoria es clave para la identidad, pero no es lo único: entre los pilares de la identidad están la influencia familiar y las conexiones sociales. Jan guarda la memoria que a Joan se le escapa.',
+        src: 'Burgos, Antropología: una guía para la existencia · Clase 6 · Pilares de la identidad' },
+      { type: 'choice', title: 'Jan deja de pensar solo en sí mismo y empieza a fijarse en lo que necesita su abuelo. ¿Qué rasgo de personalidad madura muestra?',
+        options: [
+          { t: 'Extensión del sentido de sí mismo: salir de uno mismo y mirar alrededor.', ok: true },
+          { t: 'Salud física básicamente positiva.', ok: false },
+          { t: 'Indiferencia emocional ante los problemas.', ok: false }
+        ],
+        fb: 'Para Allport, madurar es superar el egocentrismo del niño: pasar «del yo al otro». Además, «el descubrimiento del amor del otro es el factor más importante para alcanzar la madurez personal» (Malo Pé).',
+        src: 'Clase 9 · Indicadores de madurez (Allport, en F. Insa; E. Rojas)' }
+    ]
+  },
+  ramas: {
+    n: 3, name: 'Ramas', icon: 'fa-code-branch', color: '#7dd3fc', chip: 'chip-sky', minutes: '3',
+    title: 'Lo que sí podemos elegir',
+    topic: 'Libertad, felicidad y sentido de vida',
+    book: { title: 'Nadie eligió la enfermedad', text: 'Nadie en la familia eligió el olvido del abuelo. Pero cada uno elige cómo vivirlo: Caterina lo cuida con paciencia, y Jan decide acompañarlo, escuchar sus historias y guardar sus recuerdos.' },
+    core: 'Viktor Frankl: a una persona se le puede quitar todo menos una cosa, <b>la última de las libertades humanas: elegir la actitud</b> ante cualquier circunstancia. Planos de la libertad: constitutiva, de elección, interior, de realización (virtud y proyecto de vida) y social.',
+    auto: '«Quien no sabe lo que quiere, no puede ser feliz» (E. Rojas). Conocerme es saber qué quiero y por qué.',
+    eco: 'La libertad de Jan no consiste en hacer lo que quiere, sino en querer lo que vale. «El ejercicio más alto de la libertad no es elegir, es consentir, es amar» (J. Philippe).',
+    rounds: [
+      { type: 'choice', title: 'Jan no puede curar al abuelo, pero decide afrontar la situación con cariño en lugar de miedo. ¿Qué plano de la libertad ejerce?',
+        options: [
+          { t: 'La libertad interior: asumir una actitud ante lo que no se puede cambiar.', ok: true },
+          { t: 'La libertad social.', ok: false },
+          { t: 'El libertinaje: hacer lo que le da la gana.', ok: false }
+        ],
+        fb: '«Ante la enfermedad y el dolor la libertad a veces no consiste en elegir lo que haremos con nuestra vida, sino en la decisión de cómo vamos a afrontar lo inevitable» (Insa, 2021).',
+        src: 'Clase 4 · Libertad, felicidad y sentido de vida · Frankl' },
+      { type: 'wheel', title: 'Ruleta de dilemas: giren, debatan 60 segundos y decidan en equipo.' },
+      { type: 'choice', title: 'La pregunta orientadora de clase fue: «¿Qué hace que la vida del personaje de tu libro tenga sentido?». ¿Qué le da sentido a la vida de Jan?',
+        options: [
+          { t: 'Sacar buenas notas para que sus padres no se preocupen.', ok: false },
+          { t: 'Tener una tarea que cumplir y darse a otro: acompañar a su abuelo y guardar su memoria.', ok: true },
+          { t: 'Evitar todo lo que le cause tristeza.', ok: false }
+        ],
+        fb: 'En clase vimos que el sentido de vida es «tener una tarea que cumplir, saber para dónde voy, alcanzar la plenitud, darse a uno mismo». Y Rojas advierte: poner el bienestar y el placer como metas de conducta es un error de vida.',
+        src: 'Clase 4 · Sentido de vida (Yepes y Aranguren; E. Rojas)' }
+    ]
+  },
+  hojas: {
+    n: 4, name: 'Hojas', icon: 'fa-leaf', color: '#2dd4bf', chip: 'chip-teal', minutes: '2,5',
+    title: 'Las personas que nos sostienen',
+    topic: 'Autoestima: escalera, competencia, merecimiento y tipos de autoestima',
+    book: { title: 'Sentirse necesario', text: 'En el Árbol de la Vida, las hojas son las personas importantes. Para Jan, sus abuelos; para el abuelo, Jan. Al acompañar a Joan, Jan se siente útil y querido, y eso cambia la forma en que se mira a sí mismo.' },
+    core: 'Para Mruk, la autoestima es un <b>estatus vital de competencia y merecimiento</b> al manejar los retos de la vida: A = f(C, M) + e. Es <b>dinámica</b>: estable, pero abierta al cambio.',
+    auto: 'La autoestima sana no es creerse más que otros: es conocerse, aceptarse y respetarse, y eso se aprende.',
+    eco: 'Enrique Rojas lo dice así: «Una de las cosas que más elevan la autoestima es hacer algo positivo por los demás». Jan es la prueba.',
+    rounds: [
+      { type: 'order', title: 'Armen la escalera de la autoestima (Rodríguez Estrada): toquen los escalones en orden, del primero al último.',
+        steps: ['Autoconocimiento', 'Autoconcepto', 'Autoevaluación', 'Autoaceptación', 'Autorrespeto', 'Autoestima'],
+        fb: 'Primero me conozco; luego formo un concepto de mí, me evalúo, me acepto como un ser inacabado y me respeto. La autoestima es la cima de ese camino.',
+        src: 'Clases 7 y 8 · La escalera de la autoestima' },
+      { type: 'matrix', title: 'Cuatro compañeros de Core 5. Según su competencia y su merecimiento, ¿qué tipo de autoestima parece tener cada uno?',
+        cats: [
+          { k: 'sana', n: 'Sana', d: 'Competencia alta · merecimiento alto' },
+          { k: 'baja', n: 'Baja', d: 'Competencia baja · merecimiento bajo' },
+          { k: 'pseudo', n: 'Pseudoautoestima', d: 'Competencia alta · merecimiento bajo' },
+          { k: 'narc', n: 'Narcisista', d: 'Competencia baja · merecimiento alto' }
+        ],
+        items: [
+          { t: 'Juan Camilo se prepara, rinde bien y está contento consigo mismo.', c: 'sana' },
+          { t: 'Helena es brillante y responsable, pero nunca está contenta consigo misma.', c: 'pseudo' },
+          { t: 'Laura casi no estudia ni rinde, pero está muy satisfecha consigo misma.', c: 'narc' },
+          { t: 'Esteban rinde poco y está descontento consigo mismo.', c: 'baja' }
+        ],
+        fb: 'La competencia mira lo que hago y su efectividad; el merecimiento, el juicio de valor sobre mí. Solo cuando ambos están en equilibrio la autoestima es sana.',
+        src: 'Clases 7 y 8 · Tipos de autoestima (Mruk) · Artículo de V. Aya' },
+      { type: 'choice', title: 'Jan pasa las tardes con su abuelo y lo ayuda cuando algo se le olvida. ¿Qué efecto tiene esto en su autoestima?',
+        options: [
+          { t: 'La eleva: hacer algo positivo y concreto por otros fortalece la autoestima.', ok: true },
+          { t: 'La baja, porque deja de pensar en sí mismo.', ok: false },
+          { t: 'Ninguno: la autoestima no cambia desde que nacemos.', ok: false }
+        ],
+        fb: 'Rojas: «Somos más felices al dar que al recibir». Y la autoestima es dinámica: «se forma y fortalece a través de mis experiencias con otras personas y las actividades que realizo».',
+        src: 'E. Rojas, ¿Qué es la autoestima? · Clases 7 y 8' }
+    ]
+  }
+};
+
+/* ---------------- DILEMAS DE LA RULETA ---------------- */
+var DILEMMAS = [
+  { short: 'La abuela', title: 'El almuerzo con la abuela',
+    text: 'Tu abuela, que últimamente olvida algunas cosas, te invita a almorzar el domingo. El lunes tienes parcial.',
+    options: [
+      { t: 'No voy: ya habrá otros domingos.', q: 'bad', fb: 'Pusiste un bien de bienestar por encima de un bien relacional. Como el abuelo Joan, quizá ella no tenga tantos domingos para recordar.' },
+      { t: 'Voy dos horas, la escucho de verdad, y estudio antes y después con un plan claro.', q: 'good', fb: 'Libertad que ama: eliges un bien relacional sin descuidar tu responsabilidad. Así se forja el carácter.' },
+      { t: 'La llamo tres minutos mientras repaso apuntes.', q: 'mid', fb: 'Es un gesto, pero estás a medias. Escuchar de verdad exige presencia.' }
+    ] },
+  { short: 'Copiar', title: 'El trabajo del semestre pasado',
+    text: 'Un amigo te ofrece el trabajo final que entregó el semestre pasado. Nadie lo notaría.',
+    options: [
+      { t: 'Lo entrego con mi nombre: nadie se va a dar cuenta.', q: 'bad', fb: 'Libertad de elección sin libertad de realización: elegir algo que te hace peor no te hace más libre.' },
+      { t: 'Le agradezco, le pido que me explique cómo lo hizo y hago el mío.', q: 'good', fb: 'Ejerces la libertad de realización: cada acto honesto forma la virtud y tu proyecto de vida.' },
+      { t: 'Copio solo la estructura y cambio las palabras.', q: 'mid', fb: 'Sigues apropiándote de algo que no construiste. La honestidad no se negocia a medias.' }
+    ] },
+  { short: 'La fiesta', title: 'La fiesta antes del final',
+    text: 'Tu grupo se va de fiesta la noche anterior al examen final y te insiste: «¡Eres libre, ven!».',
+    options: [
+      { t: 'Voy hasta el amanecer: soy libre y hago lo que quiero.', q: 'bad', fb: 'Eso es libertinaje: «el abuso de la libertad». La libertad no es hacer lo que quiero, sino querer lo que me hace crecer.' },
+      { t: 'Decido según mi proyecto: voy un rato o no voy, y lo digo con tranquilidad.', q: 'good', fb: 'Libertad constitutiva y gobierno de sí: eres dueño de tus decisiones, no de la presión del grupo.' },
+      { t: 'No voy, pero me quedo toda la noche en redes sociales.', q: 'mid', fb: 'Evitaste la fiesta, pero no elegiste lo que realmente querías. Saber lo que quiero es la base de la felicidad.' }
+    ] },
+  { short: 'En crisis', title: 'El compañero en crisis',
+    text: 'Un integrante de tu grupo no aportó nada a la entrega. La noche antes te confiesa que atraviesa una crisis emocional fuerte.',
+    options: [
+      { t: 'Quito su nombre del trabajo: el que no trabaja no gana.', q: 'bad', fb: 'Olvidaste que la persona es vulnerable y que coexistimos. Detrás de un silencio casi siempre hay una historia.' },
+      { t: 'Lo incluyo, hablo con él en privado y lo acompaño a Bienestar Universitario.', q: 'good', fb: 'Elegiste cuidar. «La vulnerabilidad permite cuidar y ser cuidado». Es lo que hace Caterina con Joan.' },
+      { t: 'Lo incluyo, pero no le pregunto nada para evitar una conversación incómoda.', q: 'mid', fb: 'Fue generoso, pero sin acompañarlo lo dejas solo con su crisis.' }
+    ] },
+  { short: 'La IA', title: 'El ensayo hecho por IA',
+    text: 'Generaste tu ensayo de Core con inteligencia artificial. Está perfecto, pero no lo entiendes y mañana hay sustentación.',
+    options: [
+      { t: 'Lo entrego así y espero que no pregunten.', q: 'bad', fb: 'Entregas palabras que no son tuyas. Como al abuelo, se te olvidarán pronto, porque nunca fueron parte de tu memoria.' },
+      { t: 'Lo uso como borrador, lo leo, lo cuestiono y lo reescribo con mi propia reflexión.', q: 'good', fb: 'La técnica al servicio de la persona: tu inteligencia y tu voluntad siguen al mando.' },
+      { t: 'Lo memorizo para la sustentación, aunque no lo entienda.', q: 'mid', fb: 'Hay esfuerzo, pero memorizar no es comprender ni hacer tuyo un aprendizaje.' }
+    ] },
+  { short: '¿Relleno?', title: '¿Materia de relleno?',
+    text: 'Tienes una entrega técnica a medianoche. En clase de Core proponen debatir sobre la dignidad humana.',
+    options: [
+      { t: 'Digo en voz alta que eso no sirve para mi carrera.', q: 'bad', fb: 'El 60 % de nuestros encuestados pensaba algo parecido. Pero «una mala persona no llega a ser nunca un buen profesional» (H. Gardner).' },
+      { t: 'Participo y conecto la dignidad con las personas para quienes trabajará mi carrera.', q: 'good', fb: 'Haces la síntesis que busca Core: unir tu vida y tu profesión con una visión de la persona.' },
+      { t: 'Me quedo callado y adelanto la entrega en silencio.', q: 'mid', fb: 'No molestaste a nadie, pero te perdiste la oportunidad de pensar tu profesión desde la persona.' }
+    ] }
+];
+
+/* ---------------- PRÓLOGO ---------------- */
+var STORY = [
+  { num: 'Prólogo · 1 de 3', title: 'Un niño, un abuelo y un pueblo', icon: 'fa-house-chimney',
+    html: '<p>En <em>La memoria del árbol</em>, de Tina Vallès, Jan tiene diez años y vive en Barcelona con sus padres. Un día, sus abuelos Joan y Caterina dejan su casa de Vilaverd y se mudan con ellos.</p><p>Jan intuye pronto que no es una visita alegre: los adultos bajan la voz y cambian de tema. El abuelo Joan está perdiendo la memoria.</p>' },
+  { num: 'Prólogo · 2 de 3', title: 'El guardián de los recuerdos', icon: 'fa-clock',
+    html: '<p>Joan fue el relojero de su pueblo. Ahora el tiempo se le desordena por dentro. Jan, con su mirada atenta, decide acompañarlo: pasea con él, escucha sus historias —como la del sauce de Vilaverd— y guarda lo que al abuelo se le escapa.</p><p>Los árboles guardan su historia en los anillos del tronco. Las personas la guardamos en la memoria… y en los demás.</p>' },
+  { num: 'Prólogo · 3 de 3', title: 'Tu misión: revivir Core 1', icon: 'fa-tree',
+    html: '<p>Como al abuelo Joan, a veces en Core 5 se nos olvida lo que vivimos en Core 1. En clase, para responder «¿quién soy?», dibujamos nuestro <strong>Árbol de la Vida</strong>. Hoy lo recorrerán con Jan, en 15 minutos:</p>' +
+      '<div class="legend"><div><b style="color:#b45309">Raíces</b>La persona y la familia</div><div><b style="color:#047857">Tronco</b>Identidad y personalidad</div><div><b style="color:#0369a1">Ramas</b>Libertad, felicidad y sentido</div><div><b style="color:#0f766e">Hojas</b>Autoestima y relaciones</div><div><b style="color:#6d28d9">Frutos</b>Lo que me llevo</div></div>' +
+      '<p style="font-size:1.12rem">Platón preguntaba: «¿Cómo saber lo que nos conviene si no sabemos quiénes somos?». Vamos a averiguarlo.</p>' }
+];
+
+/* ---------------- ESTADO ---------------- */
+function freshState() {
+  var st = {};
+  ORDER.forEach(function (k) { st[k] = { done: false, res: [null, null, null] }; });
+  return { team: '', players: '', startedAt: 0, finishedAt: 0, prologueDone: false, frutosDone: false, st: st, gift: '', step: '', sound: true };
+}
+var state = freshState();
+var notes = [];
+function load() {
+  try { var s = JSON.parse(localStorage.getItem(KEY)); if (s && s.st) { state = s; } } catch (e) {}
+  try { var n = JSON.parse(localStorage.getItem(NOTES_KEY)); if (n && n.length) notes = n; } catch (e) {}
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} refresh(); }
+function saveNotes() { try { localStorage.setItem(NOTES_KEY, JSON.stringify(notes)); } catch (e) {} }
+
+function ringList() {
+  var r = [];
+  if (state.prologueDone) r.push('prologo');
+  ORDER.forEach(function (k) { if (state.st[k].done) r.push(k); });
+  if (state.frutosDone) r.push('frutos');
+  return r;
+}
+function memCount() {
+  var c = 0;
+  ORDER.forEach(function (k) { state.st[k].res.forEach(function (v) { if (v === true) c++; }); });
+  return c;
+}
+function elapsed() {
+  if (!state.startedAt) return 0;
+  var end = state.finishedAt || Date.now();
+  return (end - state.startedAt) / 1000;
+}
+
+/* ---------------- SONIDO ---------------- */
+var AC = null;
+function tone(f, d, type, vol, delay) {
+  if (!state.sound) return;
+  try {
+    if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state === 'suspended') AC.resume();
+    var t = AC.currentTime + (delay || 0), o = AC.createOscillator(), g = AC.createGain();
+    o.type = type || 'sine'; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol || 0.07, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + (d || 0.15));
+    o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + (d || 0.15) + 0.05);
+  } catch (e) {}
+}
+var sfx = {
+  click: function () { tone(660, 0.06, 'triangle', 0.04); },
+  tick: function () { tone(1250, 0.03, 'square', 0.015); },
+  good: function () { tone(587, 0.22, 'sine', 0.06); tone(880, 0.3, 'sine', 0.06, 0.1); },
+  bad: function () { tone(220, 0.3, 'triangle', 0.06); },
+  ring: function () { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, 0.35, 'sine', 0.07, i * 0.09); }); },
+  bell: function () { [880, 660, 880].forEach(function (f, i) { tone(f, 0.5, 'sine', 0.07, i * 0.3); }); }
+};
+function toggleSound() { state.sound = !state.sound; save(); toast(state.sound ? 'Sonido activado.' : 'Sonido desactivado.', 'info'); }
+
+/* ---------------- CONFETI ---------------- */
+function confetti(n) {
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var c = $('#fx'), ctx = c.getContext('2d'); c.width = innerWidth; c.height = innerHeight;
+  var cols = ['#34d399', '#fbbf24', '#2dd4bf', '#7dd3fc', '#c4b5fd', '#fb923c'], ps = [];
+  for (var i = 0; i < (n || 120); i++) ps.push({ x: innerWidth / 2 + (Math.random() - 0.5) * 240, y: innerHeight * 0.55, vx: (Math.random() - 0.5) * 14, vy: -Math.random() * 14 - 6, s: Math.random() * 7 + 4, c: cols[i % cols.length], r: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3, leaf: Math.random() < 0.45 });
+  var f = 0;
+  (function loop() {
+    ctx.clearRect(0, 0, c.width, c.height);
+    ps.forEach(function (p) {
+      p.vy += 0.35; p.vx *= 0.99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.c;
+      if (p.leaf) { ctx.beginPath(); ctx.ellipse(0, 0, p.s, p.s / 2.2, 0, 0, Math.PI * 2); ctx.fill(); } else ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2);
+      ctx.restore();
+    });
+    if (++f < 150) requestAnimationFrame(loop); else ctx.clearRect(0, 0, c.width, c.height);
+  })();
+}
+
+/* ---------------- TOASTS Y MODALES ---------------- */
+function toast(html, type) {
+  var t = document.createElement('div'); type = type || 'info';
+  var ic = type === 'ring' ? 'fa-ring' : type === 'warn' ? 'fa-hourglass-end' : 'fa-circle-info';
+  t.className = 'toast ' + type;
+  t.innerHTML = '<div class="ti"><i class="fa-solid ' + ic + '"></i></div><div>' + html + '</div>';
+  $('#toasts').appendChild(t);
+  setTimeout(function () { t.classList.add('out'); setTimeout(function () { t.remove(); }, 320); }, 4200);
+}
+function openModal(id) { $('#' + id).hidden = false; sfx.click(); }
+function closeModal(id) { $('#' + id).hidden = true; }
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') $$('.modal').forEach(function (m) { m.hidden = true; }); });
+function dialog(title, text, okText, onOk) {
+  $('#dialog-body').innerHTML = '<div style="font-size:2.4rem;color:var(--amber)"><i class="fa-solid fa-tree"></i></div><h3 class="mt1">' + title + '</h3><p class="muted mt1" style="line-height:1.55">' + text + '</p><div class="row mt3" style="justify-content:center"><button class="btn btn-ghost" onclick="closeModal(\'m-dialog\')">Cancelar</button><button class="btn btn-amber" id="dlg-ok">' + okText + '</button></div>';
+  $('#dlg-ok').onclick = function () { closeModal('m-dialog'); onOk(); };
+  openModal('m-dialog');
+}
+function confirmReset() {
+  dialog('¿Nueva partida?', 'Se borrará el progreso de este equipo para que otro pueda jugar. El muro de frutos se conserva.', 'Sí, empezar de nuevo', function () {
+    var snd = state.sound; state = freshState(); state.sound = snd; save();
+    $('#in-team').value = ''; $('#in-players').value = '';
+    go('start');
+  });
+}
+
+/* ---------------- MADERA (anillos) ---------------- */
+function woodSVG(size) {
+  var r = ringList(), s = '<svg viewBox="0 0 200 200" width="' + size + '" height="' + size + '">';
+  s += '<circle cx="100" cy="100" r="96" fill="#3a2716" stroke="#24170c" stroke-width="6"/><circle cx="100" cy="100" r="88" fill="#c89a63"/>';
+  for (var i = TOTAL_RINGS - 1; i >= 0; i--) {
+    var rad = 16 + i * 12.5, z = r[i];
+    s += z ? '<circle cx="100" cy="100" r="' + rad + '" fill="none" stroke="' + ZCOL[z] + '" stroke-width="5"/>'
+           : '<circle cx="100" cy="100" r="' + rad + '" fill="none" stroke="#8a6640" stroke-width="1.5" stroke-dasharray="3 5" opacity=".7"/>';
+  }
+  s += '<circle cx="100" cy="100" r="6" fill="#5b3d24"/></svg>';
+  return s;
+}
+
+/* ---------------- NAVEGACIÓN ---------------- */
+var current = 'start';
+function go(id) {
+  if (id === 'final' && !state.frutosDone) id = 'hub';
+  current = id;
+  $$('.screen').forEach(function (s) { s.classList.remove('active'); });
+  var scr = $('#s-' + (STATIONS[id] ? 'station' : id));
+  scr.classList.add('active');
+  $('#zonenav').hidden = (id === 'start' || id === 'prologue');
+  $$('.zbtn').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-go') === id || b.getAttribute('data-st') === id); });
+  if (STATIONS[id]) openStation(id);
+  if (id === 'hub') renderHub();
+  if (id === 'frutos') renderFrutos();
+  if (id === 'final') renderFinal();
+  if (id === 'prologue') renderStory();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function goHome() { go(state.prologueDone ? 'hub' : 'start'); }
+document.addEventListener('click', function (e) {
+  var b = e.target.closest('[data-go],[data-st]');
+  if (!b) return;
+  sfx.click();
+  go(b.getAttribute('data-go') || b.getAttribute('data-st'));
+});
+
+function refresh() {
+  var r = ringList();
+  $('#ring-count').textContent = r.length + ' / ' + TOTAL_RINGS;
+  $('#pill-wood').innerHTML = woodSVG(34);
+  $('#sound-btn').innerHTML = '<i class="fa-solid ' + (state.sound ? 'fa-volume-high' : 'fa-volume-xmark') + '"></i>';
+  $$('.zbtn').forEach(function (b) {
+    var k = b.getAttribute('data-st') || b.getAttribute('data-go');
+    var ok = b.querySelector('.ok'); if (!ok) return;
+    ok.hidden = !((STATIONS[k] && state.st[k].done) || (k === 'frutos' && state.frutosDone));
+  });
+  tickClock();
+}
+
+/* ---------------- RELOJ DE 15 MINUTOS ---------------- */
+var warned = false;
+function tickClock() {
+  var pill = $('#clock-pill');
+  if (!state.startedAt) { $('#clock').textContent = '15:00'; pill.classList.remove('late'); return; }
+  var left = LIMIT - elapsed();
+  $('#clock').textContent = left >= 0 ? fmt(left) : '+' + fmt(-left);
+  pill.classList.toggle('late', left < 60);
+  if (left <= 0 && !warned && !state.frutosDone) {
+    warned = true; sfx.bell();
+    toast('<b>¡Se cumplieron los 15 minutos!</b><br><span>Vayan a Frutos para cerrar su árbol.</span>', 'warn');
+  }
+}
+setInterval(tickClock, 1000);
+
+/* ---------------- INICIO ---------------- */
+function startGame() {
+  var t = $('#in-team').value.trim();
+  if (!t) { toast('Escriban el nombre del equipo para empezar.', 'warn'); $('#in-team').focus(); return; }
+  var snd = state.sound; state = freshState(); state.sound = snd;
+  state.team = t; state.players = $('#in-players').value.trim();
+  state.startedAt = Date.now(); warned = false;
+  save(); storyIdx = 0; go('prologue');
+}
+function continueGame() { go(state.frutosDone ? 'final' : (state.prologueDone ? 'hub' : 'prologue')); }
+
+/* ---------------- PRÓLOGO ---------------- */
+var storyIdx = 0;
+function renderStory() {
+  var p = STORY[storyIdx];
+  $('#story-page').innerHTML = '<div class="num">' + p.num + '</div><div class="script">' + p.title + '</div>' + p.html + '<div class="ill"><i class="fa-solid ' + p.icon + '"></i></div>';
+  $('#story-dots').innerHTML = STORY.map(function (_, i) { return '<i class="' + (i === storyIdx ? 'on' : '') + '"></i>'; }).join('');
+  $('#story-prev').style.visibility = storyIdx ? 'visible' : 'hidden';
+  $('#story-next').innerHTML = storyIdx === STORY.length - 1 ? 'Plantar mi árbol <i class="fa-solid fa-seedling"></i>' : 'Siguiente <i class="fa-solid fa-arrow-right"></i>';
+}
+function storyStep(d) {
+  sfx.click();
+  storyIdx += d;
+  if (storyIdx >= STORY.length) {
+    storyIdx = STORY.length - 1;
+    if (!state.prologueDone) { state.prologueDone = true; save(); ringFx('Prólogo'); }
+    go('raices'); return;
+  }
+  renderStory();
+}
+function ringFx(label) {
+  sfx.ring(); confetti(110);
+  var p = $('#ring-pill'); p.classList.add('flash'); setTimeout(function () { p.classList.remove('flash'); }, 600);
+  toast('<b>Anillo ' + ringList().length + ' de ' + TOTAL_RINGS + '</b> · ' + label + '<br><span>Tu tronco guarda un nuevo recuerdo.</span>', 'ring');
+}
+
+/* ---------------- MAPA ---------------- */
+var LEAVES = [[200, 150, 46], [150, 170, 40], [250, 170, 40], [110, 140, 36], [290, 140, 36], [160, 110, 42], [240, 110, 42], [200, 85, 42], [125, 195, 30], [275, 195, 30], [200, 45, 32], [200, 190, 30]];
+var LEAF_COLS = ['#10b981', '#34d399', '#059669', '#2dd4bf', '#14b8a6', '#0d9488', '#6ee7b7', '#a3e635', '#047857', '#5eead4', '#bef264', '#0f766e'];
+function renderHub() {
+  $('#hub-hello').textContent = 'Hola, ' + (state.team || 'equipo');
+  var m = memCount(), g = '';
+  LEAVES.forEach(function (l, i) {
+    var lit = i < m;
+    g += '<circle class="leafc' + (lit ? ' lit' : '') + '" cx="' + l[0] + '" cy="' + l[1] + '" r="' + l[2] + '" fill="' + (lit ? LEAF_COLS[i] : '#16271f') + '" opacity="' + (lit ? 0.88 : 0.5) + '"/>';
+  });
+  $('#canopy').innerHTML = g;
+  var fr = '';
+  if (state.frutosDone) [[150, 130], [255, 150], [205, 105], [120, 175], [280, 185]].forEach(function (p) { fr += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="9" fill="#c4b5fd" stroke="#6d28d9" stroke-width="2"/>'; });
+  $('#fruits').innerHTML = fr;
+  $('#tree-glow').setAttribute('opacity', (0.25 + 0.06 * ringList().length).toFixed(2));
+  $$('.hot').forEach(function (h) {
+    var k = h.getAttribute('data-st') || h.getAttribute('data-go');
+    h.classList.toggle('done', (STATIONS[k] && state.st[k].done) || (k === 'frutos' && state.frutosDone));
+  });
+  var next = nextStop();
+  $('#hub-mission').innerHTML = next
+    ? '<b>Siguiente estación</b><p class="mt1" style="color:#fce7b3">' + next.label + '</p><button class="btn btn-amber btn-sm mt2" onclick="go(\'' + next.id + '\')"><i class="fa-solid fa-arrow-right"></i> Ir ahora</button>'
+    : '<b>¡Árbol completo!</b><p class="mt1" style="color:#fce7b3">Recuperaron ' + memCount() + ' de ' + TOTAL_MEM + ' recuerdos.</p><button class="btn btn-amber btn-sm mt2" onclick="go(\'final\')"><i class="fa-solid fa-award"></i> Ver resultados</button>';
+  var html = ORDER.map(function (k) {
+    var s = STATIONS[k], d = state.st[k].done;
+    return '<button class="zcard" data-st="' + k + '"><div class="zi" style="background:' + s.color + '22;color:' + s.color + '"><i class="fa-solid ' + s.icon + '"></i></div><div><h4>' + s.n + '. ' + s.name + ' · ' + s.title + '</h4><p>' + s.topic + ' · ≈ ' + s.minutes + ' min</p></div><div class="st">' + (d ? '<span class="chip chip-em"><i class="fa-solid fa-check"></i> ' + score(k) + '/3</span>' : '<span class="chip chip-plain">Pendiente</span>') + '</div></button>';
+  }).join('');
+  html += '<button class="zcard" data-go="frutos"><div class="zi" style="background:#c4b5fd22;color:#c4b5fd"><i class="fa-solid fa-apple-whole"></i></div><div><h4>5. Frutos · Lo que me llevo</h4><p>Familia, relaciones y proyecto de vida · ≈ 2 min</p></div><div class="st">' + (state.frutosDone ? '<span class="chip chip-em"><i class="fa-solid fa-check"></i> Hecho</span>' : '<span class="chip chip-plain">Pendiente</span>') + '</div></button>';
+  $('#hub-zones').innerHTML = html;
+}
+function score(k) { return state.st[k].res.filter(function (v) { return v === true; }).length; }
+function nextStop() {
+  for (var i = 0; i < ORDER.length; i++) if (!state.st[ORDER[i]].done) { var s = STATIONS[ORDER[i]]; return { id: ORDER[i], label: s.n + '. ' + s.name + ': ' + s.topic + '.' }; }
+  if (!state.frutosDone) return { id: 'frutos', label: '5. Frutos: cuelguen en el muro un regalo de Core 1 y su primer paso.' };
+  return null;
+}
+
+/* ---------------- ESTACIONES ---------------- */
+var cur = { id: null, stage: 'intro', i: 0, answered: false, tmp: null };
+function openStation(id) { cur = { id: id, stage: state.st[id].done ? 'done' : 'intro', i: 0, answered: false, tmp: null }; renderStation(); }
+function renderStation() {
+  var s = STATIONS[cur.id], res = state.st[cur.id].res;
+  var prog = res.map(function (v, i) { var c = v === true ? 'ok' : v === false ? 'no' : ''; if (cur.stage === 'round' && i === cur.i && v === null) c = 'cur'; return '<i class="' + c + '"></i>'; }).join('');
+  $('#st-head').innerHTML = '<span class="chip ' + s.chip + '"><i class="fa-solid ' + s.icon + '"></i> Estación ' + s.n + ' · ' + s.name + ' · ≈ ' + s.minutes + ' min</span><h2>' + s.title + '</h2><p class="topic">Tema de Core 1: ' + s.topic + '</p><div class="progress">' + prog + '</div>';
+  var b = $('#st-body');
+  if (cur.stage === 'intro') {
+    b.innerHTML = '<div class="intro-grid"><div class="paper book-card"><div class="lab">Escena del libro</div><div class="script">' + s.book.title + '</div><p>' + s.book.text + '</p></div><div>' +
+      '<div class="info"><b style="color:' + s.color + '"><i class="fa-solid fa-graduation-cap"></i> Lo que vimos en Core 1</b><p>' + s.core + '</p></div>' +
+      '<div class="info"><b style="color:var(--amber)"><i class="fa-solid fa-magnifying-glass"></i> Lo que enseña sobre autoconocimiento</b><p>' + s.auto + '</p></div></div></div>' +
+      '<div class="center mt3"><button class="btn btn-em" onclick="beginRounds()">Empezar los 3 retos <i class="fa-solid fa-arrow-right"></i></button></div>';
+  } else if (cur.stage === 'round') {
+    renderRound();
+  } else {
+    var sc = score(cur.id), nx = nextStop();
+    b.innerHTML = '<div class="card done-card"><div class="ring-ico">' + woodSVG(86) + '</div><h3>¡Estación ' + s.name + ' completa!</h3><p class="muted">Recuperaron <b style="color:#fff">' + sc + ' de 3</b> recuerdos de Core 1.</p>' +
+      '<div class="echo mt3" style="text-align:left"><div class="ico"><i class="fa-solid fa-book-open"></i></div><div><b>Eco del libro</b><p>' + s.eco + '</p></div></div>' +
+      '<div class="row mt3" style="justify-content:center"><button class="btn btn-ghost" onclick="replayStation()"><i class="fa-solid fa-rotate"></i> Repasar</button>' +
+      (nx ? '<button class="btn btn-em" onclick="go(\'' + nx.id + '\')">Siguiente estación <i class="fa-solid fa-arrow-right"></i></button>' : '<button class="btn btn-amber" onclick="go(\'final\')"><i class="fa-solid fa-award"></i> Ver resultados</button>') + '</div></div>';
+  }
+}
+function beginRounds() { sfx.click(); cur.stage = 'round'; cur.i = 0; cur.answered = false; cur.tmp = null; renderStation(); }
+function replayStation() { sfx.click(); cur.stage = 'round'; cur.i = 0; cur.answered = false; cur.tmp = null; renderStation(); }
+function contBtn() {
+  var last = cur.i === 2;
+  return '<div class="cont"><button class="btn btn-em" onclick="nextRound()">' + (last ? 'Terminar estación <i class="fa-solid fa-flag-checkered"></i>' : 'Siguiente reto <i class="fa-solid fa-arrow-right"></i>') + '</button></div>';
+}
+function record(ok) {
+  var r = state.st[cur.id].res;
+  r[cur.i] = (r[cur.i] === true) ? true : ok;
+  save();
+  if (ok) sfx.good(); else sfx.bad();
+}
+function nextRound() {
+  sfx.click();
+  if (cur.i < 2) { cur.i++; cur.answered = false; cur.tmp = null; renderStation(); return; }
+  var first = !state.st[cur.id].done;
+  state.st[cur.id].done = true; save();
+  cur.stage = 'done'; renderStation();
+  if (first) ringFx('Estación ' + STATIONS[cur.id].name);
+}
+function fbBox(cls, title, text, src) {
+  var ic = cls === 'good' ? 'fa-circle-check' : cls === 'mid' ? 'fa-circle-half-stroke' : 'fa-circle-xmark';
+  var col = cls === 'good' ? 'var(--em)' : cls === 'mid' ? 'var(--amber)' : 'var(--rose)';
+  return '<div class="fb ' + cls + '"><h4><i class="fa-solid ' + ic + '" style="color:' + col + '"></i> ' + title + '</h4><p>' + text + '</p>' + (src ? '<span class="src"><i class="fa-solid fa-bookmark"></i> ' + src + '</span>' : '') + '</div>';
+}
+function renderRound() {
+  var r = STATIONS[cur.id].rounds[cur.i], b = $('#st-body'), head = '<div class="card pad"><div class="xs dim" style="font-weight:800;letter-spacing:.12em;text-transform:uppercase">Reto ' + (cur.i + 1) + ' de 3</div><div class="q-title mt1">' + r.title + '</div>';
+  if (r.type === 'choice') {
+    if (!cur.tmp) cur.tmp = shuffle(r.options.map(function (o, i) { return i; }));
+    b.innerHTML = head + '<div class="opts" id="r-opts">' + cur.tmp.map(function (oi, k) { return '<button class="opt" data-oi="' + oi + '" onclick="pickChoice(' + oi + ')"><span class="k">' + 'ABC'[k] + '</span><span>' + r.options[oi].t + '</span></button>'; }).join('') + '</div><div id="r-fb"></div></div>';
+  } else if (r.type === 'sort') {
+    if (!cur.tmp) cur.tmp = { order: shuffle(r.items.map(function (_, i) { return i; })), pick: {} };
+    b.innerHTML = head + '<div class="sort-list">' + cur.tmp.order.map(function (ii) {
+      return '<div class="sort-item" id="si-' + ii + '"><span>' + r.items[ii].t + '</span><div class="seg">' + r.buckets.map(function (bk, bi) { return '<button class="' + (cur.tmp.pick[ii] === bi ? 'on' : '') + '" onclick="pickSort(' + ii + ',' + bi + ')">' + bk + '</button>'; }).join('') + '</div></div>';
+    }).join('') + '</div><div class="cont" id="r-check"><button class="btn btn-em" onclick="checkSort()"><i class="fa-solid fa-check"></i> Comprobar</button></div><div id="r-fb"></div></div>';
+  } else if (r.type === 'order') {
+    if (!cur.tmp) cur.tmp = { pool: shuffle(r.steps), got: 0, err: 0 };
+    renderOrder(head, r);
+  } else if (r.type === 'matrix') {
+    if (!cur.tmp) cur.tmp = { pick: {} };
+    b.innerHTML = head + '<div class="matrix-legend">' + r.cats.map(function (c) { return '<div><b>' + c.n + '</b>' + c.d + '</div>'; }).join('') + '</div><div class="sort-list">' + r.items.map(function (it, ii) {
+      return '<div class="sort-item" id="si-' + ii + '"><span>' + it.t + '</span><div class="seg">' + r.cats.map(function (c) { return '<button class="' + (cur.tmp.pick[ii] === c.k ? 'on' : '') + '" onclick="pickMatrix(' + ii + ',\'' + c.k + '\')">' + c.n + '</button>'; }).join('') + '</div></div>';
+    }).join('') + '</div><div class="cont" id="r-check"><button class="btn btn-em" onclick="checkMatrix()"><i class="fa-solid fa-check"></i> Comprobar</button></div><div id="r-fb"></div></div>';
+  } else if (r.type === 'wheel') {
+    renderWheelRound(head, r);
+  }
+}
+function pickChoice(oi) {
+  if (cur.answered) return; cur.answered = true;
+  var r = STATIONS[cur.id].rounds[cur.i], ok = r.options[oi].ok;
+  $$('#r-opts .opt').forEach(function (el) {
+    var i = +el.getAttribute('data-oi'); el.disabled = true;
+    if (r.options[i].ok) el.classList.add('ok'); else if (i === oi) el.classList.add('bad');
+  });
+  record(ok);
+  $('#r-fb').innerHTML = fbBox(ok ? 'good' : 'bad', ok ? '¡Recuerdo recuperado!' : 'Casi: la respuesta correcta está marcada en verde', r.fb, r.src) + contBtn();
+}
+function pickSort(ii, bi) { if (cur.answered) return; cur.tmp.pick[ii] = bi; sfx.click(); renderRound(); }
+function checkSort() {
+  var r = STATIONS[cur.id].rounds[cur.i];
+  if (Object.keys(cur.tmp.pick).length < r.items.length) { toast('Clasifiquen todos los elementos antes de comprobar.', 'warn'); return; }
+  cur.answered = true; var good = 0;
+  r.items.forEach(function (it, ii) {
+    var el = $('#si-' + ii), ok = cur.tmp.pick[ii] === it.b; if (ok) good++;
+    el.classList.add(ok ? 'ok' : 'bad');
+    el.querySelectorAll('button').forEach(function (bt) { bt.disabled = true; });
+    if (!ok) el.insertAdjacentHTML('beforeend', '<span class="mark" style="color:var(--rose)">Era: ' + r.buckets[it.b] + '</span>');
+  });
+  var ok = good >= r.items.length - 1;
+  record(ok);
+  $('#r-check').remove();
+  $('#r-fb').innerHTML = fbBox(ok ? 'good' : 'bad', good + ' de ' + r.items.length + ' correctas' + (ok ? ': ¡recuerdo recuperado!' : ''), r.fb, r.src) + contBtn();
+}
+function renderOrder(head, r) {
+  var t = cur.tmp, lad = '';
+  for (var i = r.steps.length - 1; i >= 0; i--) lad += i < t.got ? '<div><i>' + (i + 1) + '</i>' + r.steps[i] + '</div>' : '<div class="empty"><i>' + (i + 1) + '</i>Escalón ' + (i + 1) + '</div>';
+  var pool = t.pool.filter(function (s) { return r.steps.indexOf(s) >= t.got; });
+  $('#st-body').innerHTML = head + '<div class="grid2 mt1"><div><div class="order-pool" id="r-pool">' + pool.map(function (s) { return '<button onclick="pickOrder(this,\'' + s + '\')">' + s + '</button>'; }).join('') + '</div><p class="xs dim mt2">Errores: <b id="r-err">' + t.err + '</b></p></div><div class="ladder">' + lad + '</div></div><div id="r-fb"></div></div>';
+  if (t.got === r.steps.length) {
+    var ok = t.err <= 1;
+    if (!cur.answered) { cur.answered = true; record(ok); }
+    $('#r-fb').innerHTML = fbBox(ok ? 'good' : 'mid', ok ? '¡Escalera completa! Recuerdo recuperado.' : 'Escalera completa con ' + t.err + ' errores', r.fb, r.src) + contBtn();
+  }
+}
+function pickOrder(btn, s) {
+  var r = STATIONS[cur.id].rounds[cur.i], t = cur.tmp;
+  if (r.steps[t.got] === s) { t.got++; sfx.good(); renderRound(); }
+  else { t.err++; sfx.bad(); btn.classList.remove('shake'); void btn.offsetWidth; btn.classList.add('shake'); $('#r-err').textContent = t.err; }
+}
+function pickMatrix(ii, k) { if (cur.answered) return; cur.tmp.pick[ii] = k; sfx.click(); renderRound(); }
+function checkMatrix() {
+  var r = STATIONS[cur.id].rounds[cur.i];
+  if (Object.keys(cur.tmp.pick).length < r.items.length) { toast('Elijan un tipo de autoestima para cada compañero.', 'warn'); return; }
+  cur.answered = true; var good = 0;
+  r.items.forEach(function (it, ii) {
+    var el = $('#si-' + ii), ok = cur.tmp.pick[ii] === it.c; if (ok) good++;
+    el.classList.add(ok ? 'ok' : 'bad');
+    el.querySelectorAll('button').forEach(function (bt) { bt.disabled = true; });
+    if (!ok) { var n = r.cats.filter(function (c) { return c.k === it.c; })[0].n; el.insertAdjacentHTML('beforeend', '<span class="mark" style="color:var(--rose)">Era: ' + n + '</span>'); }
+  });
+  var ok = good >= 3;
+  record(ok);
+  $('#r-check').remove();
+  $('#r-fb').innerHTML = fbBox(ok ? 'good' : 'bad', good + ' de 4 correctas' + (ok ? ': ¡recuerdo recuperado!' : ''), r.fb, r.src) + contBtn();
+}
+
+/* ---------------- RULETA (estación Ramas) ---------------- */
+var wheel = { rot: -Math.PI / 2 - Math.PI / DILEMMAS.length, spinning: false, idx: null, timer: null, left: 60, ctx: null };
+function renderWheelRound(head) {
+  $('#st-body').innerHTML = head + '<div class="wheel-grid"><div><div class="wheel-wrap"><div class="wheel-pin"><i class="fa-solid fa-caret-down"></i></div><canvas id="wheel"></canvas><button class="spin-btn" id="spin-btn" onclick="spinWheel()">GIRAR</button></div></div><div id="dl-panel"><div class="echo"><div class="ico"><i class="fa-solid fa-comments"></i></div><div><b>Debate relámpago</b><p>El 40 % de los estudiantes encuestados pidió debatir casos reales. Giren la ruleta: tendrán 60 segundos para ponerse de acuerdo antes de decidir.</p></div></div></div></div><div id="r-fb"></div></div>';
+  var c = $('#wheel'), dpr = window.devicePixelRatio || 1;
+  c.width = 340 * dpr; c.height = 340 * dpr;
+  wheel.ctx = c.getContext('2d'); wheel.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  wheel.idx = null; clearInterval(wheel.timer);
+  drawWheel();
+}
+function drawWheel() {
+  var ctx = wheel.ctx; if (!ctx) return;
+  var n = DILEMMAS.length, arc = Math.PI * 2 / n, cols = ['#0f766e', '#b45309', '#0369a1', '#6d28d9', '#047857', '#be123c'];
+  ctx.clearRect(0, 0, 340, 340);
+  for (var i = 0; i < n; i++) {
+    var a = wheel.rot + i * arc;
+    ctx.beginPath(); ctx.moveTo(170, 170); ctx.arc(170, 170, 162, a, a + arc); ctx.closePath();
+    ctx.fillStyle = cols[i % cols.length]; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = '#0a1512'; ctx.stroke();
+    var mid = ((a + arc / 2) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2), flip = mid > Math.PI / 2 && mid < Math.PI * 1.5;
+    ctx.save(); ctx.translate(170, 170); ctx.rotate(a + arc / 2 + (flip ? Math.PI : 0)); ctx.fillStyle = '#f8fafc'; ctx.font = '700 13px "Plus Jakarta Sans", sans-serif'; ctx.textAlign = flip ? 'left' : 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText(DILEMMAS[i].short, flip ? -150 : 150, 0); ctx.restore();
+  }
+  ctx.beginPath(); ctx.arc(170, 170, 46, 0, Math.PI * 2); ctx.fillStyle = '#0a1512'; ctx.fill();
+}
+function sliceAtPointer() { var n = DILEMMAS.length, arc = Math.PI * 2 / n, a = ((-Math.PI / 2 - wheel.rot) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2); return Math.floor(a / arc) % n; }
+function spinWheel() {
+  if (wheel.spinning || cur.answered) return;
+  wheel.spinning = true; $('#spin-btn').disabled = true; clearInterval(wheel.timer);
+  var n = DILEMMAS.length, arc = Math.PI * 2 / n, TAU = Math.PI * 2;
+  var idx = Math.floor(Math.random() * n);
+  if (idx === wheel.idx) idx = (idx + 1) % n;
+  var target = -Math.PI / 2 - (idx + 0.5) * arc + (Math.random() - 0.5) * arc * 0.6;
+  var start = wheel.rot, delta = ((target - start) % TAU + TAU) % TAU, end = start + TAU * 4 + delta;
+  var t0 = performance.now(), dur = 3800, last = sliceAtPointer();
+  (function frame(now) {
+    var t = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - t, 4);
+    wheel.rot = start + (end - start) * e; drawWheel();
+    var s = sliceAtPointer(); if (s !== last) { last = s; sfx.tick(); }
+    if (t < 1) requestAnimationFrame(frame);
+    else { wheel.rot = end % TAU; wheel.spinning = false; $('#spin-btn').disabled = false; showDilemma(idx); }
+  })(t0);
+}
+function showDilemma(idx) {
+  wheel.idx = idx; var d = DILEMMAS[idx];
+  cur.tmp = shuffle([0, 1, 2]);
+  $('#dl-panel').innerHTML = '<span class="chip chip-sky"><i class="fa-solid fa-scale-balanced"></i> Dilema</span><h3 class="mt1" style="font-size:1.4rem">' + d.title + '</h3><div class="q-ctx">' + d.text + '</div>' +
+    '<div class="timer" id="dl-timer"><i class="fa-solid fa-stopwatch" style="font-size:1.5rem;color:var(--em)"></i><div style="flex:1"><div class="tl">Debate en equipo</div><div class="tt" id="dl-time">1:00</div></div><button class="btn btn-ghost btn-sm" onclick="endDebate()">Ya decidimos</button></div>' +
+    '<div class="opts" id="r-opts">' + cur.tmp.map(function (oi, k) { return '<button class="opt" data-oi="' + oi + '" onclick="pickDilemma(' + oi + ')"><span class="k">' + 'ABC'[k] + '</span><span>' + d.options[oi].t + '</span></button>'; }).join('') + '</div>';
+  wheel.left = 60; clearInterval(wheel.timer);
+  wheel.timer = setInterval(function () {
+    wheel.left--; var el = $('#dl-time'); if (!el) { clearInterval(wheel.timer); return; }
+    el.textContent = fmt(wheel.left); $('#dl-timer').classList.toggle('urgent', wheel.left <= 10);
+    if (wheel.left <= 0) { clearInterval(wheel.timer); sfx.bell(); toast('¡Tiempo de debate cumplido! Elijan su decisión.', 'warn'); }
+  }, 1000);
+}
+function endDebate() { clearInterval(wheel.timer); var el = $('#dl-timer'); if (el) el.style.opacity = '.5'; }
+function pickDilemma(oi) {
+  if (cur.answered) return; cur.answered = true; endDebate();
+  var d = DILEMMAS[wheel.idx], o = d.options[oi], ok = o.q === 'good';
+  $('#spin-btn').disabled = true;
+  $$('#r-opts .opt').forEach(function (el) {
+    var i = +el.getAttribute('data-oi'); el.disabled = true;
+    if (d.options[i].q === 'good') el.classList.add('ok'); else if (i === oi) el.classList.add(o.q === 'mid' ? 'mid' : 'bad');
+  });
+  record(ok);
+  var title = ok ? 'Decisión con raíces profundas' : o.q === 'mid' ? 'Decisión a medio camino' : 'Rama torcida';
+  $('#r-fb').innerHTML = fbBox(o.q, title, o.fb + (ok ? '' : ' La opción más libre está marcada en verde.'), 'Clase 4 · Libertad, felicidad y sentido de vida') + contBtn();
+}
+
+/* ---------------- FRUTOS ---------------- */
+var GIFTS = ['No valgo por mis notas: tengo dignidad', 'Soy un «quién», no un «qué»', 'Mi carácter se puede forjar', 'Siempre puedo elegir mi actitud', 'Conocerme me ayuda a quererme', 'Nadie crece solo: mi familia me sostiene'];
+var SEED_NOTES = [
+  { t: 'Entendí que mi valor no depende de mis notas, sino de ser persona.', s: 'Escuchar sin juzgar a mi equipo.', a: 'Equipo Horizonte', d: 'Muestra' },
+  { t: 'Como Jan, descubrí que cuidar a otro también me ayuda a conocerme.', s: 'Llamar a mis abuelos esta semana.', a: 'Equipo Horizonte', d: 'Muestra' }
+];
+function renderFrutos() {
+  $('#gift-prompts').innerHTML = GIFTS.map(function (g) { return '<button onclick="pickGift(this)">' + g + '</button>'; }).join('');
+  var list = notes.concat(notes.length < 3 ? SEED_NOTES : []);
+  $('#notes').innerHTML = list.map(function (n, i) {
+    var mine = i < notes.length;
+    return '<div class="note"><div class="h"><span><i class="fa-solid fa-apple-whole"></i> Fruto</span><span>' + esc(n.d) + '</span></div><p>«' + esc(n.t) + '»</p>' + (n.s ? '<p style="font-size:1rem;font-style:normal"><b>Primer paso:</b> ' + esc(n.s) + '</p>' : '') + '<div class="a">— ' + esc(n.a) + '</div>' + (mine ? '<button class="del" title="Quitar" onclick="delNote(' + i + ')"><i class="fa-solid fa-xmark"></i></button>' : '') + '</div>';
+  }).join('');
+}
+function pickGift(btn) { $('#note-text').value = btn.textContent + '. '; $('#note-text').focus(); sfx.click(); }
+function addNote() {
+  var t = $('#note-text').value.trim(), s = $('#note-step').value.trim(), a = $('#note-author').value.trim() || state.team || 'Estudiante de Core 5';
+  if (!t) { toast('Escriban el regalo que les dejó Core 1.', 'warn'); $('#note-text').focus(); return; }
+  if (!s) { toast('Escriban su primer paso: cada meta empieza con uno.', 'warn'); $('#note-step').focus(); return; }
+  var d = new Date();
+  notes.unshift({ t: t, s: s, a: a, d: ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) });
+  saveNotes();
+  $('#note-text').value = ''; $('#note-step').value = ''; $('#note-author').value = '';
+  if (!state.frutosDone) {
+    state.gift = t; state.step = s; state.frutosDone = true; state.finishedAt = Date.now(); save();
+    ringFx('Frutos');
+    renderFrutos();
+    setTimeout(function () { go('final'); }, 1500);
+  } else { sfx.good(); renderFrutos(); toast('Fruto colgado en el muro.', 'info'); }
+}
+function delNote(i) { notes.splice(i, 1); saveNotes(); renderFrutos(); }
+
+/* ---------------- FINAL ---------------- */
+var CHAIN = [
+  { z: 'raices', ic: 'fa-seedling', t: '<b>Porque soy persona</b>, soy alguien único, con dignidad y una familia que me precede (Raíces).' },
+  { z: 'tronco', ic: 'fa-gem', t: '<b>Por eso tengo una identidad</b> y una personalidad propias: no elijo mi temperamento, pero sí forjo mi carácter (Tronco).' },
+  { z: 'ramas', ic: 'fa-code-branch', t: '<b>Porque soy libre</b>, puedo elegir mi actitud y darle sentido a mi vida, incluso ante lo que no puedo cambiar (Ramas).' },
+  { z: 'hojas', ic: 'fa-leaf', t: '<b>Al conocerme y darme a otros</b>, crece una autoestima sana, hecha de competencia y merecimiento (Hojas).' },
+  { z: 'frutos', ic: 'fa-apple-whole', t: '<b>Lo que recibo y entrego</b> son los frutos: la memoria que guardo de los demás y el primer paso que doy hoy (Frutos).' }
+];
+function renderFinal() {
+  $('#final-team').textContent = state.team + (state.players ? ' · ' + state.players : '');
+  $('#final-wood').innerHTML = woodSVG(190);
+  $('#f-rings').textContent = ringList().length + '/' + TOTAL_RINGS;
+  $('#f-mem').textContent = memCount() + '/' + TOTAL_MEM;
+  $('#f-time').textContent = fmt(elapsed());
+  $('#final-chain').innerHTML = CHAIN.map(function (c) { return '<div><i class="fa-solid ' + c.ic + '" style="background:' + ZCOL[c.z] + '22;color:' + ZCOL[c.z] + '"></i><span>' + c.t + '</span></div>'; }).join('');
+  confetti(140);
+}
+
+/* ---------------- CERTIFICADO ---------------- */
+function wrap(ctx, text, x, y, maxW, lh) {
+  var words = String(text).split(' '), line = '', lines = [];
+  words.forEach(function (w) { var test = line ? line + ' ' + w : w; if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; } else line = test; });
+  if (line) lines.push(line);
+  lines.forEach(function (l, i) { ctx.fillText(l, x, y + i * lh); });
+  return y + lines.length * lh;
+}
+function downloadCert() {
+  var go2 = function () {
+    var W = 1600, H = 1050, c = document.createElement('canvas'); c.width = W; c.height = H;
+    var x = c.getContext('2d');
+    var g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#faf3e3'); g.addColorStop(1, '#ead9b4');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    x.strokeStyle = '#4a3220'; x.lineWidth = 14; x.strokeRect(28, 28, W - 56, H - 56);
+    x.strokeStyle = '#c49756'; x.lineWidth = 2; x.strokeRect(50, 50, W - 100, H - 100);
+    x.textAlign = 'center'; x.fillStyle = '#7a5a36'; x.font = '700 22px Outfit, sans-serif';
+    x.fillText('CORE-LAB · CORE 1: PERSONA Y AUTOCONOCIMIENTO · FERIA CORE', W / 2, 115);
+    x.fillStyle = '#3a2e22'; x.font = '110px "Pinyon Script", cursive'; x.fillText('La memoria del árbol', W / 2, 240);
+    x.font = '700 30px Outfit, sans-serif'; x.fillStyle = '#5b4128'; x.fillText('CERTIFICADO DE GUARDIANES DE LA MEMORIA', W / 2, 300);
+    x.font = 'italic 32px "Cormorant Garamond", serif'; x.fillStyle = '#4a3826'; x.fillText('Se reconoce a', W / 2, 365);
+    x.font = '700 64px "Cormorant Garamond", serif'; x.fillStyle = '#0f5132'; x.fillText(state.team || 'Equipo Core 5', W / 2, 435);
+    if (state.players) { x.font = '24px "Plus Jakarta Sans", sans-serif'; x.fillStyle = '#5b4128'; wrap(x, state.players, W / 2, 478, 1100, 30); }
+    x.font = '30px "Cormorant Garamond", serif'; x.fillStyle = '#3a2e22';
+    wrap(x, 'por recorrer su Árbol de la Vida junto a Jan y el abuelo Joan, completar ' + ringList().length + ' de ' + TOTAL_RINGS + ' anillos y recuperar ' + memCount() + ' de ' + TOTAL_MEM + ' recuerdos de Core 1 en ' + fmt(elapsed()) + ' minutos.', W / 2, 548, 1150, 40);
+    x.textAlign = 'left'; x.font = '700 20px Outfit, sans-serif'; x.fillStyle = '#7a5a36'; x.fillText('UN REGALO DE CORE 1', 170, 690);
+    x.font = 'italic 28px "Cormorant Garamond", serif'; x.fillStyle = '#3a2e22'; wrap(x, '«' + (state.gift || '—') + '»', 170, 730, 820, 34);
+    x.font = '700 20px Outfit, sans-serif'; x.fillStyle = '#7a5a36'; x.fillText('MI PRIMER PASO', 170, 830);
+    x.font = 'italic 28px "Cormorant Garamond", serif'; x.fillStyle = '#3a2e22'; wrap(x, '«' + (state.step || '—') + '»', 170, 870, 820, 34);
+    var cx = 1300, cy = 790;
+    x.beginPath(); x.arc(cx, cy, 150, 0, Math.PI * 2); x.fillStyle = '#3a2716'; x.fill();
+    x.beginPath(); x.arc(cx, cy, 138, 0, Math.PI * 2); x.fillStyle = '#c89a63'; x.fill();
+    var rl = ringList();
+    for (var i = 0; i < TOTAL_RINGS; i++) { x.beginPath(); x.arc(cx, cy, 24 + i * 19, 0, Math.PI * 2); x.strokeStyle = rl[i] ? ZCOL[rl[i]] : '#8a6640'; x.lineWidth = rl[i] ? 7 : 2; x.stroke(); }
+    x.textAlign = 'center'; x.font = '20px "Plus Jakarta Sans", sans-serif'; x.fillStyle = '#7a5a36';
+    var d = new Date(); var meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    x.fillText('Equipo Horizonte · «Cada meta empieza con un paso» · ' + d.getDate() + ' de ' + meses[d.getMonth()] + ' de ' + d.getFullYear(), W / 2, H - 82);
+    var a = document.createElement('a');
+    a.download = 'Certificado_CoreLab_' + (state.team || 'equipo').replace(/[^\wáéíóúñÁÉÍÓÚÑ]+/g, '_') + '.png';
+    a.href = c.toDataURL('image/png'); a.click();
+    toast('Certificado descargado.', 'ring');
+  };
+  if (document.fonts && document.fonts.load) {
+    Promise.all([document.fonts.load('110px "Pinyon Script"'), document.fonts.load('700 64px "Cormorant Garamond"'), document.fonts.load('italic 28px "Cormorant Garamond"'), document.fonts.load('700 30px Outfit')]).then(go2, go2);
+  } else go2();
+}
+
+/* ---------------- ARRANQUE ---------------- */
+(function init() {
+  load();
+  var lv = $('#leaves');
+  for (var i = 0; i < 14; i++) {
+    var e = document.createElement('i'); e.className = 'fa-solid fa-leaf';
+    e.style.left = (Math.random() * 100) + 'vw'; e.style.fontSize = (12 + Math.random() * 14) + 'px';
+    e.style.animationDuration = (10 + Math.random() * 14) + 's'; e.style.animationDelay = (-Math.random() * 20) + 's';
+    lv.appendChild(e);
+  }
+  if (state.team && state.startedAt) {
+    $('#continue-box').hidden = false;
+    $('#continue-label').textContent = 'Continuar: ' + state.team + ' (' + ringList().length + '/' + TOTAL_RINGS + ' anillos)';
+  }
+  refresh();
+  window.addEventListener('resize', function () { if (wheel.ctx && $('#wheel')) drawWheel(); });
+})();
+</script>
 </body>
 </html>
